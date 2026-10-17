@@ -33,8 +33,6 @@ npm run migrate        # 数据库结构同步（部署前跑，需 DATABASE_URL
 
 ## 部署
 
-线上：https://nav-vue-anchen770s-projects.vercel.app
-
 ### Vercel（推荐）
 
 1. 把仓库 Import 到 Vercel：构建配置已由 `vercel.json` 预配好，无需手动填写
