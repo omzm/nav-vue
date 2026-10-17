@@ -27,8 +27,9 @@ export function createApp() {
     res.status(404).json({ error: '接口不存在' })
   })
 
-  // 生产静态托管：client 构建产物
-  if (process.env.NODE_ENV === 'production') {
+  // 生产静态托管：client 构建产物。
+  // Vercel 上由 CDN 直接托管 outputDirectory 并做 SPA fallback，这里跳过。
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
     const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist')
     app.use(express.static(dist))
     app.get('*', (_req, res) => {
