@@ -93,6 +93,15 @@ html {
   vertical-align: -0.125em;
 }
 
+/* 约束 v-html 注入的 iconfont SVG：它们常带 width/height 硬编码属性（如 200），
+   不压住的话会撑破外层 1em 的 span，导致侧边栏图标和文字错行（与 nav 原版 globals.css 一致） */
+.category-svg-icon svg {
+  width: 1em !important;
+  height: 1em !important;
+  display: block;
+  flex: none;
+}
+
 /* 顶部导航进度条（后台页面切换反馈） */
 @keyframes nav-progress {
   0% {
