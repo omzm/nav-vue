@@ -58,6 +58,13 @@ npm run migrate        # 数据库结构同步（部署前跑；需 DATABASE_URL
 
 ## 部署
 
-单进程部署：`npm run build && npm run migrate && npm run start`。
+线上地址：https://nav-vue-anchen770s-projects.vercel.app
+
+Vercel 部署（当前在用）：前端 `client/dist` 走 CDN，后端 Express 打包成单个 serverless function
+（`api/index.js`，见 `vercel.json` 的 rewrites 配置）。连接 GitHub 仓库后 push 自动部署。
+所需环境变量：`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、
+`SUPABASE_SERVICE_ROLE_KEY`、`ADMIN_SESSION_SECRET`。
+
+单进程部署（备用）：`npm run build && npm run migrate && npm run start`。
 生产环境设置 `NODE_ENV=production`，后端同时托管 `client/dist` 并做 SPA fallback。
 反向代理（如 Caddy/Nginx）把域名指向 `PORT` 即可；HTTPS 由代理层终止。
