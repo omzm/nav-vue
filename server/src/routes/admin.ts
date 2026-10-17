@@ -17,6 +17,7 @@ router.use(requireAdmin);
 const UNLOCK_PHRASE_KEY = 'unlock_phrase';
 const DEFAULT_UNLOCK_PHRASE = '开门';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const USERNAME_RE = /^[\w\u4e00-\u9fa5-]{2,32}$/;
 
 /* ---------------- 数据总览 ---------------- */
@@ -72,6 +73,9 @@ router.post('/categories', async (req, res) => {
 
 router.put('/categories/:id', async (req, res) => {
   const { id } = req.params;
+  if (!UUID_RE.test(id)) {
+    return res.status(400).json({ ok: false, error: '无效的分类 ID' });
+  }
   const name = String(req.body?.name ?? '').trim();
   const icon = String(req.body?.icon ?? '').trim();
   const order = Number(req.body?.order) || 0;
@@ -109,6 +113,9 @@ router.put('/categories/:id', async (req, res) => {
 /** 删除分类：名下链接随外键 ON DELETE CASCADE 一并删除 */
 router.delete('/categories/:id', async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) {
+      return res.status(400).json({ ok: false, error: '无效的分类 ID' });
+    }
     const { error } = await createServiceClient().from('categories').delete().eq('id', req.params.id);
     if (error) throw error;
     invalidateSnapshot();
@@ -186,6 +193,9 @@ router.post('/links', async (req, res) => {
 
 router.put('/links/:id', async (req, res) => {
   const { id } = req.params;
+  if (!UUID_RE.test(id)) {
+    return res.status(400).json({ ok: false, error: '无效的链接 ID' });
+  }
   const category_id = String(req.body?.category_id ?? '').trim();
   const title = String(req.body?.title ?? '').trim();
   const rawUrl = String(req.body?.url ?? '').trim();
@@ -215,6 +225,9 @@ router.put('/links/:id', async (req, res) => {
 
 router.delete('/links/:id', async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) {
+      return res.status(400).json({ ok: false, error: '无效的链接 ID' });
+    }
     const { error } = await createServiceClient().from('links').delete().eq('id', req.params.id);
     if (error) throw error;
     invalidateSnapshot();

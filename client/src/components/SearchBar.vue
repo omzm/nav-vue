@@ -37,7 +37,7 @@ onMounted(() => {
     </svg>
     <button
       v-if="props.value"
-      class="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      class="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 active:scale-90 active:opacity-60 transition-colors touch-manipulation"
       aria-label="清除搜索"
       @click="props.onChange('')"
     >

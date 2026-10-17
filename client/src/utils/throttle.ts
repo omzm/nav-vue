@@ -12,23 +12,25 @@ export function throttle<Args extends unknown[]>(
   let inThrottle = false;
   let lastArgs: Args | null = null;
 
+  // 窗口结束：有被吞掉的调用就补执行最后一次并再开一轮窗口，
+  // 否则释放节流锁。inThrottle 在窗口链结束前一直保持 true，
+  // 新调用只会更新 lastArgs，不会丢失。
+  function onWindowEnd() {
+    if (lastArgs) {
+      const trailingArgs = lastArgs;
+      lastArgs = null;
+      func(...trailingArgs);
+      setTimeout(onWindowEnd, limit);
+    } else {
+      inThrottle = false;
+    }
+  }
+
   return (...args: Args) => {
     if (!inThrottle) {
       inThrottle = true;
       func(...args);
-      setTimeout(() => {
-        inThrottle = false;
-        // trailing：窗口内有被吞掉的调用，补执行最后一次
-        if (lastArgs) {
-          const trailingArgs = lastArgs;
-          lastArgs = null;
-          func(...trailingArgs);
-          inThrottle = true;
-          setTimeout(() => {
-            inThrottle = false;
-          }, limit);
-        }
-      }, limit);
+      setTimeout(onWindowEnd, limit);
     } else {
       lastArgs = args;
     }

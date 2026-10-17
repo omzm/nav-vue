@@ -35,7 +35,8 @@ watch(
   () => props.isOpen,
   (isOpen) => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
-  }
+  },
+  { immediate: true }
 );
 onUnmounted(() => {
   document.body.style.overflow = '';

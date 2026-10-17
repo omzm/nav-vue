@@ -162,7 +162,7 @@ const currentYear = new Date().getFullYear();
             <span class="text-sm font-bold text-gray-900 dark:text-gray-100">收藏夹</span>
           </div>
           <button
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 active:scale-95 transition-colors touch-manipulation"
             aria-label="打开侧边栏"
             @click="isSidebarOpen = !isSidebarOpen"
           >
@@ -182,7 +182,7 @@ const currentYear = new Date().getFullYear();
         <div class="relative px-4 py-8 sm:py-10">
           <div class="flex items-center justify-end mb-2 lg:hidden">
             <button
-              class="p-2 transition-all duration-300"
+              class="p-2 rounded-lg transition-all duration-300 active:scale-90 active:opacity-70 touch-manipulation"
               aria-label="打开侧边栏"
               @click="isSidebarOpen = !isSidebarOpen"
             >
@@ -229,7 +229,7 @@ const currentYear = new Date().getFullYear();
               </div>
             </div>
             <button
-              class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
+              class="px-4 py-2 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 active:scale-[0.97] text-white text-sm font-medium rounded-lg transition-colors touch-manipulation"
               @click="exitPrivateMode"
             >
               退出隐私模式
