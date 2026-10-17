@@ -59,7 +59,7 @@
           </div>
           <button
             type="button"
-            class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+            class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-slate-500 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-[0.98] active:bg-red-100"
             @click="showLogoutConfirm = true"
           >
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -76,7 +76,7 @@
           <AdminBrand compact />
           <button
             type="button"
-            class="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+            class="rounded-lg p-2 text-slate-600 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200"
             aria-label="打开导航菜单"
             @click="drawerOpen = true"
           >
@@ -96,7 +96,7 @@
                 <aside v-if="drawerOpen" class="absolute inset-y-0 left-0 flex w-64 flex-col bg-white shadow-2xl">
                   <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4">
                     <AdminBrand compact />
-                    <button type="button" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100" aria-label="关闭菜单" @click="drawerOpen = false">
+                    <button type="button" class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200" aria-label="关闭菜单" @click="drawerOpen = false">
                       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                         <path d="M18 6 6 18M6 6l12 12" />
                       </svg>
@@ -114,7 +114,7 @@
                   <div class="border-t border-slate-100 p-3">
                     <button
                       type="button"
-                      class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-slate-500 hover:bg-red-50 hover:text-red-600"
+                      class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-slate-500 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-[0.98] active:bg-red-100"
                       @click="showLogoutConfirm = true"
                     >
                       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
