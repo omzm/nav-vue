@@ -114,3 +114,12 @@ html {
 .nav-progress-bar {
   animation: nav-progress 1s ease-in-out infinite;
 }
+
+/* iOS 点按反馈：Tailwind preflight 把 -webkit-tap-highlight-color 全局置透明了，
+   手机上点任何可交互元素都没有系统级的"点到了"闪光。:active 样式在 iOS 上又快又弱，
+   两者叠加就是"点了感觉没反应"。这里给可交互元素恢复一个可见的轻触高亮。 */
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: rgba(79, 70, 229, 0.18);
+}
