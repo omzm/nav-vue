@@ -5,7 +5,7 @@
     :min="min"
     :step="step"
     :disabled="disabled"
-    class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-50"
+    class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-base text-slate-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-50"
     @input="$emit('update:modelValue', Number(($event.target as HTMLInputElement).value) || 0)"
   />
 </template>
