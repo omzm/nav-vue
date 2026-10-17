@@ -30,7 +30,7 @@ const props = withDefaults(
 defineEmits<{ click: [event: MouseEvent] }>()
 
 const base =
-  'inline-flex select-none items-center justify-center gap-1.5 rounded-lg font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]'
+  'inline-flex select-none items-center justify-center gap-1.5 rounded-lg font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation active:scale-[0.97] active:brightness-95'
 
 const variants: Record<string, string> = {
   primary:
