@@ -10,13 +10,10 @@ import type { NavCategory } from '../types.js';
 const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** 首页公开快照（只含公开数据，RLS 已过滤私密行，可安全做边缘缓存） */
+/** 首页公开快照（只含公开数据） */
 router.get('/snapshot', async (_req, res) => {
   try {
     const snapshot = await getSnapshot();
-    // 边缘缓存 45 秒（与服务端内存缓存 TTL 一致）：命中时直接由 Vercel 边缘节点返回，
-    // 跳过 serverless 冷启动。后台变更后最多 45 秒可见，与之前内存缓存的语义相同。
-    res.set('Cache-Control', 'public, s-maxage=45');
     res.json(snapshot);
   } catch (error) {
     console.error('GET /api/snapshot failed:', error);

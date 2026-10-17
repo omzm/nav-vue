@@ -12,7 +12,7 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useScrollState } from '@/composables/useScrollState';
 import { useAdminRefresh } from '@/composables/useAdminRefresh';
 import { usePrivateUnlock } from '@/composables/usePrivateUnlock';
-import { api, get } from '@/api/client';
+import { get } from '@/api/client';
 import type { NavCategory, NavSnapshot } from '@/types';
 import { version } from '../../package.json';
 
@@ -34,9 +34,7 @@ async function loadSnapshot() {
   isSnapshotLoading.value = true;
   snapshotLoadFailed.value = false;
   try {
-    // 快照是纯公开数据：不带 cookie 请求，让 Vercel 边缘缓存（s-maxage=45）生效，
-    // 命中时直接跳过 serverless 冷启动
-    snapshot.value = await api<NavSnapshot>('/snapshot', { credentials: 'omit' });
+    snapshot.value = await get<NavSnapshot>('/snapshot');
   } catch (error) {
     console.error('Failed to load nav snapshot:', error);
     snapshotLoadFailed.value = true;
