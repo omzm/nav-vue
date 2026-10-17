@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>收藏夹 - 一些常用的工具</title>
+    <meta name="description" content="收录了开发工具、设计资源、学习平台、效率工具等精选网站" />
+    <link rel="canonical" href="/" />
+    <!-- 深色模式预置：首屏绘制前按 localStorage/系统偏好加上 dark 类，避免深色用户看到浅色闪烁 -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <!-- 壁纸是首屏视觉主体（LCP）：preload 静态声明，不等导航快照返回就开始下载 -->
+    <link rel="preload" as="image" href="/api/bing-wallpaper" fetchpriority="high" />
+    <!-- 字体预连接：提前建连，减少首屏字体链路延迟 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

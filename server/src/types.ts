@@ -1,0 +1,37 @@
+/** 服务端共享类型（与 client/src/types.ts 的前台部分保持一致） */
+
+export interface NavLink {
+  id?: string;
+  title: string;
+  url: string;
+  description: string;
+  icon?: string;
+  isPrivate?: boolean;
+}
+
+export interface HotLink {
+  title: string;
+  url: string;
+  icon?: string;
+  clickCount: number;
+}
+
+export interface NavCategory {
+  id: string;
+  name: string;
+  icon: string;
+  links: NavLink[];
+  isPrivate?: boolean;
+  order?: number;
+}
+
+export interface NavSnapshot {
+  categories: NavCategory[];
+  hotLinks: HotLink[];
+  stats: {
+    categoryCount: number;
+    linkCount: number;
+    totalViewCount: number;
+  };
+  generatedAt: string;
+}
