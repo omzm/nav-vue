@@ -38,7 +38,7 @@ onUnmounted(() => {
 
 <template>
   <button
-    class="fixed bottom-6 sm:bottom-8 right-4 sm:right-6 z-50 w-12 h-12 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center group"
+    class="fixed bottom-6 sm:bottom-8 right-4 sm:right-6 z-50 w-12 h-12 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 active:scale-90 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center group touch-manipulation"
     aria-label="返回顶部"
     @click="scrollToTop"
   >

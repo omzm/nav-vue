@@ -16,6 +16,7 @@ import {
   hasAuthUserByEmail,
 } from '../lib/adminConfig.js';
 import { env } from '../lib/env.js';
+import { isRateLimited, getClientIp } from '../lib/rateLimit.js';
 
 const router = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,6 +51,9 @@ router.get('/config-status', async (_req, res) => {
 /** 指定邮箱的 Auth 用户是否存在（供 setup 页判断恢复场景） */
 router.get('/has-auth-user', async (req, res) => {
   const email = String(req.query.email ?? '');
+  if (!EMAIL_RE.test(email)) {
+    return res.json({ exists: false });
+  }
   res.json({ exists: await hasAuthUserByEmail(email) });
 });
 
@@ -153,6 +157,11 @@ router.post('/login', async (req, res) => {
     const password = String(req.body?.password ?? '');
     if (!id || !password) {
       return res.status(400).json({ ok: false, error: '请输入账号和密码' });
+    }
+
+    // 防暴力破解：同一 IP 10 分钟内最多尝试 10 次
+    if (isRateLimited(`login:${getClientIp(req)}`, 10, 10 * 60_000)) {
+      return res.status(429).json({ ok: false, error: '尝试次数过多，请 10 分钟后再试' });
     }
 
     let email: string | null = null;

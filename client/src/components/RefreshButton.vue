@@ -15,7 +15,7 @@ const props = withDefaults(
     :aria-busy="props.isRefreshing"
     aria-label="刷新页面"
     :class="`fixed bottom-[8.5rem] sm:bottom-[9rem] right-4 sm:right-6 z-50 w-12 h-12 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center group ${
-      props.isRefreshing ? 'cursor-not-allowed opacity-70' : ''
+      props.isRefreshing ? 'cursor-not-allowed opacity-70' : 'active:scale-90 touch-manipulation'
     }`"
     @click="props.onRefresh?.()"
   >

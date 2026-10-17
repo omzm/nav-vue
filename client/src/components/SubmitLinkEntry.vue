@@ -176,7 +176,7 @@ function clearVerification() {
 }
 
 const inputClass =
-  'w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+  'w-full px-3 py-2 text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 </script>
 
 <template>
@@ -232,7 +232,7 @@ const inputClass =
 
             <div v-if="verified" class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               <span>密码已验证，本标签页内免输</span>
-              <button class="text-blue-600 dark:text-blue-400 hover:underline" @click="clearVerification">
+              <button class="text-blue-600 dark:text-blue-400 hover:underline active:opacity-60 touch-manipulation" @click="clearVerification">
                 清除
               </button>
             </div>
