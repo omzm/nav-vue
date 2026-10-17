@@ -29,7 +29,7 @@ npm run migrate        # 数据库结构同步（部署前跑，需 DATABASE_URL
 ```
 
 首次部署后访问 `/admin/setup` 完成管理员初始化（生产环境需要 `SETUP_TOKEN`）。
-环境变量说明见 `.env.example` 与 `SETUP.md`。
+环境变量说明见 `.env.example` 与 [SETUP.md](./SETUP.md)。
 
 ## 部署
 
@@ -51,9 +51,9 @@ npm run migrate        # 数据库结构同步（部署前跑，需 DATABASE_URL
 ### 单进程（VPS/备用）
 
 1. 服务器安装 Node 20+，`git clone` 后 `npm install`
-2. `cp .env.example .env` 并填写（变量说明见 `SETUP.md`）
+2. `cp .env.example .env` 并填写（变量说明见 [SETUP.md](./SETUP.md)）
 3. `npm run migrate` 初始化数据库（需要 `DATABASE_URL`）
 4. `npm run build && NODE_ENV=production npm run start`（建议用 pm2 托管）
 5. 前面架 Caddy/Nginx 反向代理到 `PORT`（默认 3001），配好 HTTPS
 
-详细说明见 `SETUP.md`。
+详细说明见 [SETUP.md](./SETUP.md)。
