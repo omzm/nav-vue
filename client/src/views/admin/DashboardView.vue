@@ -56,7 +56,7 @@
                 <h2 class="text-[15px] font-semibold text-slate-900">最近添加</h2>
                 <p class="mt-0.5 text-[13px] text-slate-500">最新收录的网站与工具</p>
               </div>
-              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-indigo-600 hover:text-indigo-800" @click="go('/admin/dashboard/links')">
+              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-indigo-600 transition-all touch-manipulation hover:text-indigo-800 active:opacity-60" @click="go('/admin/dashboard/links')">
                 全部链接
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m9 18 6-6-6-6" />
@@ -114,7 +114,7 @@
                 <h2 class="text-[15px] font-semibold text-slate-900">分类分布</h2>
                 <p class="mt-0.5 text-[13px] text-slate-500">链接最多的 {{ topCategories.length }} 个分类</p>
               </div>
-              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-indigo-600 hover:text-indigo-800" @click="go('/admin/dashboard/categories')">
+              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-indigo-600 transition-all touch-manipulation hover:text-indigo-800 active:opacity-60" @click="go('/admin/dashboard/categories')">
                 全部分类
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m9 18 6-6-6-6" />

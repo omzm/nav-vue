@@ -187,7 +187,7 @@
                   <div class="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-indigo-600"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
                       :aria-label="'编辑 ' + link.title"
                       title="编辑链接"
                       @click="go('/admin/dashboard/link/' + link.id)"
@@ -198,7 +198,7 @@
                     </button>
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100 disabled:opacity-50"
                       :aria-label="'删除 ' + link.title"
                       title="删除链接"
                       :disabled="deletingId === link.id"
@@ -273,7 +273,7 @@
             <div class="flex shrink-0 gap-0.5">
               <button
                 type="button"
-                class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
                 :aria-label="'编辑 ' + link.title"
                 @click="go('/admin/dashboard/link/' + link.id)"
               >
@@ -283,7 +283,7 @@
               </button>
               <button
                 type="button"
-                class="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100"
                 :aria-label="'删除 ' + link.title"
                 @click="linkToDelete = link"
               >
