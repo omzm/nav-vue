@@ -12,11 +12,14 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useScrollState } from '@/composables/useScrollState';
 import { useAdminRefresh } from '@/composables/useAdminRefresh';
 import { usePrivateUnlock } from '@/composables/usePrivateUnlock';
-import { get } from '@/api/client';
+import { api, get } from '@/api/client';
 import type { NavCategory, NavSnapshot } from '@/types';
 import { version } from '../../package.json';
 
 const snapshot = ref<NavSnapshot | null>(null);
+// 快照加载中：此时展示骨架屏，而不是"没有找到匹配的结果"（数据还没回来不是没结果）
+const isSnapshotLoading = ref(true);
+const snapshotLoadFailed = ref(false);
 const submitEnabled = ref(false);
 
 const selectedCategory = ref<string | null>(null);
@@ -28,10 +31,17 @@ useKeyboardShortcuts();
 const { scrolledPastHeader, headerRef } = useScrollState();
 
 async function loadSnapshot() {
+  isSnapshotLoading.value = true;
+  snapshotLoadFailed.value = false;
   try {
-    snapshot.value = await get<NavSnapshot>('/snapshot');
+    // 快照是纯公开数据：不带 cookie 请求，让 Vercel 边缘缓存（s-maxage=45）生效，
+    // 命中时直接跳过 serverless 冷启动
+    snapshot.value = await api<NavSnapshot>('/snapshot', { credentials: 'omit' });
   } catch (error) {
     console.error('Failed to load nav snapshot:', error);
+    snapshotLoadFailed.value = true;
+  } finally {
+    isSnapshotLoading.value = false;
   }
 }
 
@@ -228,7 +238,34 @@ const currentYear = new Date().getFullYear();
             </button>
           </div>
 
-          <template v-if="filteredCategories.length > 0">
+          <template v-if="isSnapshotLoading">
+            <!-- 数据加载中：骨架屏（与 CategorySection 的栅格对齐），避免"没有找到匹配的结果"闪现 -->
+            <div class="space-y-8 sm:space-y-10 animate-pulse" aria-hidden="true">
+              <div v-for="n in 3" :key="n">
+                <div class="h-6 w-28 bg-gray-200 dark:bg-gray-700/60 rounded-md mb-3 sm:mb-4"></div>
+                <div class="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-3">
+                  <div
+                    v-for="m in 6"
+                    :key="m"
+                    class="h-[76px] sm:h-[88px] bg-gray-100 dark:bg-gray-800/60 rounded-xl"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-else-if="snapshotLoadFailed && !snapshot">
+            <div class="text-center py-20">
+              <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">导航数据加载失败</p>
+              <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">网络开小差了，点下面按钮重试</p>
+              <button
+                class="mt-5 px-5 py-2.5 rounded-full bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 active:scale-95 transition"
+                @click="loadSnapshot"
+              >
+                重新加载
+              </button>
+            </div>
+          </template>
+          <template v-else-if="filteredCategories.length > 0">
             <CategorySection
               v-for="category in filteredCategories"
               :key="category.id"
