@@ -218,10 +218,10 @@
 
         <!-- 移动端卡片 -->
         <div class="divide-y divide-slate-100 md:hidden">
-          <div v-if="filteredLinks.length === 0" class="px-4">
+          <div v-if="pageLinks.length === 0" class="px-4">
             <EmptyState title="暂无链接" description="添加链接后，首页会按分类与排序展示。" />
           </div>
-          <article v-for="link in filteredLinks" :key="link.id" class="flex items-start gap-3 px-4 py-3.5">
+          <article v-for="link in pageLinks" :key="link.id" class="flex items-start gap-3 px-4 py-3.5">
             <input
               type="checkbox"
               :checked="selectedIds.has(link.id)"

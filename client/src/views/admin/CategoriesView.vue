@@ -158,10 +158,10 @@
 
         <!-- 移动端卡片 -->
         <div class="divide-y divide-slate-100 md:hidden">
-          <div v-if="filteredCategories.length === 0" class="px-4">
+          <div v-if="pageItems.length === 0" class="px-4">
             <EmptyState title="暂无分类" description="添加分类后，首页导航会按排序展示。" />
           </div>
-          <article v-for="category in filteredCategories" :key="category.id" class="flex items-center gap-3 px-4 py-3.5">
+          <article v-for="category in pageItems" :key="category.id" class="flex items-center gap-3 px-4 py-3.5">
             <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-2xl text-slate-600">
               <CategoryIcon :icon="category.icon" />
             </span>
