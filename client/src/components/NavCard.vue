@@ -1,10 +1,26 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue';
 import type { NavLink } from '@/types';
 import LazyFavicon from './LazyFavicon.vue';
+import { isEmojiIcon } from '@/utils/icons';
 
 const props = defineProps<{
   link: NavLink;
 }>();
+
+// 自定义图标优先于自动获取：URL 直接当图片渲染，Emoji 当文字渲染（与后台 LinkIcon 口径一致）
+const customIcon = computed(() => (props.link.icon ?? '').trim());
+const customImageUrl = computed(() => (/^https?:\/\//i.test(customIcon.value) ? customIcon.value : ''));
+const customEmoji = computed(() =>
+  customIcon.value && !customImageUrl.value && isEmojiIcon(customIcon.value) ? customIcon.value : ''
+);
+const customImgFailed = ref(false);
+watch(
+  () => props.link.icon,
+  () => {
+    customImgFailed.value = false;
+  }
+);
 
 function handleClick() {
   const link = props.link;
@@ -49,10 +65,19 @@ function handleClick() {
 
     <div class="relative flex h-full items-center justify-start gap-2.5 text-left sm:h-auto sm:items-start sm:gap-0 sm:space-x-3">
       <div class="flex-shrink-0 w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-md sm:rounded-lg bg-gray-50 dark:bg-gray-700/50 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-        <LazyFavicon :url="link.url" :alt="`${link.title} icon`" img-class="w-4 h-4 sm:w-6 sm:h-6 object-contain">
-          <span v-if="link.icon" class="text-base sm:text-xl">{{ link.icon }}</span>
+        <img
+          v-if="customImageUrl && !customImgFailed"
+          :src="customImageUrl"
+          :alt="`${link.title} icon`"
+          class="w-4 h-4 sm:w-6 sm:h-6 object-contain"
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          @error="customImgFailed = true"
+        />
+        <span v-else-if="customEmoji" class="text-base sm:text-xl">{{ customEmoji }}</span>
+        <LazyFavicon v-else :url="link.url" :alt="`${link.title} icon`" img-class="w-4 h-4 sm:w-6 sm:h-6 object-contain">
           <svg
-            v-else
             class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400"
             fill="none"
             stroke="currentColor"

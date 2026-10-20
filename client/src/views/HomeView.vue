@@ -204,7 +204,7 @@ const currentYear = new Date().getFullYear();
             </div>
           </div>
           <div class="flex justify-center px-2 sm:px-0 mt-3 sm:mt-4">
-            <div class="w-full max-w-md px-3 py-1 rounded-full bg-white/40 dark:bg-gray-800/40 backdrop-blur-md text-gray-500 dark:text-gray-500 text-[10px] sm:text-xs text-center shadow-sm transition-all duration-300 hover:bg-white/50 dark:hover:bg-gray-800/50 hover:shadow-md leading-tight">
+            <div class="w-full max-w-md px-3 py-1 rounded-full bg-white/25 dark:bg-gray-800/25 backdrop-blur-md text-gray-500 dark:text-gray-500 text-[10px] sm:text-xs text-center shadow-sm transition-all duration-300 hover:bg-white/40 dark:hover:bg-gray-800/40 hover:shadow-md leading-tight">
               {{ quoteText }}
             </div>
           </div>

@@ -67,21 +67,32 @@
 
         <aside class="flex min-w-0 flex-col gap-5">
           <Card title="图标预览">
-            <p class="text-xs leading-5 text-slate-400" :class="iconError ? 'text-red-500' : ''">
+            <p class="text-xs leading-5 text-slate-400" :class="iconError && !iconFetching ? 'text-red-500' : ''">
               {{
-                iconError
-                  ? '自动图标获取失败，可以手动填写 Emoji'
-                  : icon.trim()
-                    ? '正在使用自定义图标'
-                    : '自动获取网站图标'
+                iconFetching
+                  ? '正在获取网站图标…'
+                  : iconError
+                    ? '自动图标获取失败，可以手动填写 Emoji'
+                    : icon.trim()
+                      ? '正在使用自定义图标'
+                      : '自动获取网站图标'
               }}
             </p>
             <div class="mt-3 flex items-center gap-4">
               <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-3xl">
-                <LinkIcon :url="url" :icon="effectiveIcon" />
+                <LinkIcon
+                  :key="iconPreviewKey"
+                  :url="url"
+                  :icon="effectiveIcon"
+                  spinner
+                  @load="handleIconLoad"
+                  @error="handleIconError"
+                />
               </span>
               <div class="flex flex-wrap gap-2">
-                <AppButton size="sm" :disabled="!url.trim()" @click="resetIcon">重新获取</AppButton>
+                <AppButton size="sm" :disabled="!url.trim()" :loading="iconFetching" @click="resetIcon">
+                  {{ iconFetching ? '获取中…' : '重新获取' }}
+                </AppButton>
                 <AppButton
                   size="sm"
                   variant="ghost"
@@ -177,6 +188,9 @@ const iconCleared = ref(false)
 const order = ref(0)
 const isPrivate = ref(false)
 const iconError = ref(false)
+const iconFetching = ref(false)
+const iconPreviewKey = ref(0)
+let iconFetchTimer: ReturnType<typeof setTimeout> | null = null
 
 const saving = ref(false)
 const saveAndContinueLoading = ref(false)
@@ -217,6 +231,25 @@ function resetIcon() {
   icon.value = ''
   iconCleared.value = true
   iconError.value = false
+  // 强制预览图重挂载，确保即使地址没变也能收到 load/error 回报进度
+  iconPreviewKey.value += 1
+  iconFetching.value = true
+  if (iconFetchTimer) clearTimeout(iconFetchTimer)
+  // 兜底：图片事件没回来时 8 秒后收起动画，避免一直转圈
+  iconFetchTimer = setTimeout(() => {
+    iconFetching.value = false
+  }, 8000)
+}
+
+function handleIconLoad() {
+  if (iconFetchTimer) clearTimeout(iconFetchTimer)
+  iconFetching.value = false
+}
+
+function handleIconError() {
+  if (iconFetchTimer) clearTimeout(iconFetchTimer)
+  iconFetching.value = false
+  iconError.value = true
 }
 
 function openEmojipedia() {
