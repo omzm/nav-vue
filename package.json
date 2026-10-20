@@ -12,7 +12,7 @@
     "migrate": "npm run migrate --workspace=server",
     "start": "npm run start --workspace=server"
   },
-  "version": "0.1.6",
+  "version": "0.1.7",
   "workspaces": [
     "client",
     "server"
