@@ -8,7 +8,7 @@
       <slot name="action" />
     </div>
     <slot />
-    <p v-if="hint" class="text-xs leading-4 text-slate-400">{{ hint }}</p>
+    <p v-if="hint || $slots.hint" class="text-xs leading-4 text-slate-400"><slot name="hint">{{ hint }}</slot></p>
   </div>
 </template>
 

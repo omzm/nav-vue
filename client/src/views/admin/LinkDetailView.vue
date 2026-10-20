@@ -43,8 +43,17 @@
               <TextArea v-model="description" placeholder="简短描述这个网站的用途" :rows="4" required />
             </Field>
 
-            <Field label="自定义图标" hint="图标无法自动获取可前往ico5（https://ico5.net/favicon-fetcher/）获取">
+            <Field label="自定义图标">
               <TextInput v-model="icon" placeholder="Emoji 或图片链接，留空自动获取" />
+              <template #hint>
+                图标无法自动获取可前往<a
+                  href="https://ico5.net/favicon-fetcher/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-medium text-indigo-600 underline underline-offset-2"
+                  >ico5</a
+                >获取
+              </template>
             </Field>
 
             <Field
