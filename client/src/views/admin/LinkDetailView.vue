@@ -43,7 +43,7 @@
               <TextArea v-model="description" placeholder="简短描述这个网站的用途" :rows="4" required />
             </Field>
 
-            <Field label="自定义图标" hint="Emoji 或图片链接，留空自动获取网站图标">
+            <Field label="自定义图标" hint="图标无法自动获取可前往ico5（https://ico5.net/favicon-fetcher/）获取">
               <TextInput v-model="icon" placeholder="Emoji 或图片链接，留空自动获取" />
             </Field>
 
