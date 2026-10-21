@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-[13px] text-slate-500">正在加载链接…</span>
     </div>
 
@@ -64,13 +64,13 @@
         <!-- 批量操作条 -->
         <div
           v-if="selectedIds.size > 0"
-          class="flex flex-wrap items-center gap-2 border-b border-indigo-100 bg-indigo-50/60 px-4 py-2.5"
+          class="flex flex-wrap items-center gap-2 border-b border-edge bg-steelsoft/60 px-4 py-2.5"
           role="toolbar"
           aria-label="批量操作"
         >
           <span class="text-[13px] font-semibold text-slate-800">已选 {{ selectedIds.size }} 项</span>
           <AppButton size="sm" variant="ghost" @click="selectedIds.clear()">取消选择</AppButton>
-          <span class="h-4 w-px bg-indigo-200" />
+          <span class="h-4 w-px bg-edge" />
           <AppButton size="sm" :loading="batchBusy" @click="showMoveModal = true">
             移动到分类
           </AppButton>
@@ -80,7 +80,7 @@
           <AppButton size="sm" :loading="batchBusy" @click="handleBatchVisibility(true)">
             设为私密
           </AppButton>
-          <span class="h-4 w-px bg-indigo-200" />
+          <span class="h-4 w-px bg-edge" />
           <AppButton size="sm" variant="danger" :loading="batchBusy" @click="showBatchDelete = true">
             批量删除
           </AppButton>
@@ -96,7 +96,7 @@
                     type="checkbox"
                     :checked="allFilteredSelected"
                     :indeterminate="someFilteredSelected"
-                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-indigo-600"
+                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-steeldeep"
                     aria-label="全选当前筛选结果"
                     @change="toggleSelectAll"
                   />
@@ -118,9 +118,9 @@
                 v-for="link in pageLinks"
                 :key="link.id"
                 :draggable="canSort && !isFiltering"
-                class="border-t border-slate-100 transition-colors hover:bg-indigo-50/30"
+                class="border-t border-slate-100 transition-colors hover:bg-steelsoft/50"
                 :class="[
-                  selectedIds.has(link.id) ? 'bg-indigo-50/50' : '',
+                  selectedIds.has(link.id) ? 'bg-steelsoft/50' : '',
                   canSort && !isFiltering ? 'cursor-move select-none' : '',
                 ]"
                 @dragstart="onDragStart(link.id, $event)"
@@ -133,14 +133,14 @@
                   <input
                     type="checkbox"
                     :checked="selectedIds.has(link.id)"
-                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-indigo-600"
+                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-steeldeep"
                     :aria-label="'选择 ' + link.title"
                     @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
                   />
                 </td>
                 <td class="px-4 py-3 align-middle">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-xl">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-xl">
                       <LinkIcon :url="link.url" :icon="link.icon" />
                     </span>
                     <div class="min-w-0">
@@ -149,7 +149,7 @@
                         target="_blank"
                         rel="noopener noreferrer"
                         :title="link.url"
-                        class="block max-w-[320px] truncate font-medium text-slate-800 hover:text-indigo-600"
+                        class="block max-w-[320px] truncate font-medium text-slate-800 hover:text-steeldeep"
                       >{{ link.title }}</a>
                       <span class="block max-w-[320px] truncate text-xs text-slate-400" :title="link.description">
                         {{ link.description || hostname(link.url) }}
@@ -187,7 +187,7 @@
                   <div class="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                       :aria-label="'编辑 ' + link.title"
                       title="编辑链接"
                       @click="go('/admin/dashboard/link/' + link.id)"
@@ -225,11 +225,11 @@
             <input
               type="checkbox"
               :checked="selectedIds.has(link.id)"
-              class="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-indigo-600"
+              class="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-steeldeep"
               :aria-label="'选择 ' + link.title"
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-2xl">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-2xl">
               <LinkIcon :url="link.url" :icon="link.icon" />
             </span>
             <div class="min-w-0 flex-1">
@@ -273,7 +273,7 @@
             <div class="flex shrink-0 gap-0.5">
               <button
                 type="button"
-                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                 :aria-label="'编辑 ' + link.title"
                 @click="go('/admin/dashboard/link/' + link.id)"
               >

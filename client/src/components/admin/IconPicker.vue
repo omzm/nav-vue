@@ -114,16 +114,16 @@ function setTab(next: IconTab) {
 function tabButtonClass(key: IconTab): string {
   const base = 'rounded-full border px-3.5 py-1.5 text-[13px] transition-colors cursor-pointer'
   return tab.value === key
-    ? `${base} border-indigo-600 bg-indigo-600 text-white`
-    : `${base} border-slate-200 bg-white text-slate-700 hover:border-slate-300`
+    ? `${base} border-ink bg-ink text-white`
+    : `${base} border-edge bg-white text-slate-700 hover:border-[#CBD7E6]`
 }
 
 function gridButtonClass(selected: boolean): string {
   const base =
     'flex aspect-square items-center justify-center rounded-lg text-slate-800 transition-colors cursor-pointer'
   return selected
-    ? `${base} border-2 border-indigo-600 bg-indigo-50`
-    : `${base} border border-slate-200 bg-white hover:border-slate-300`
+    ? `${base} border-2 border-steel bg-steelsoft`
+    : `${base} border border-edge bg-white hover:border-[#CBD7E6]`
 }
 
 const isSvg = computed(() => isSvgCode(props.modelValue))

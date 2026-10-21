@@ -1,10 +1,10 @@
 <template>
-  <div class="flex min-h-screen flex-col bg-[#f4f6fa]">
+  <div class="flex min-h-screen flex-col bg-page">
     <header class="flex w-full items-center justify-between px-5 py-4 sm:px-8">
       <AdminBrand />
       <RouterLink
         to="/"
-        class="inline-flex items-center gap-1 text-xs text-indigo-600 transition-colors hover:text-indigo-800"
+        class="inline-flex items-center gap-1 text-xs text-steeldeep transition-colors hover:text-ink"
       >
         返回首页
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17,13 +17,13 @@
       <DbErrorNotice v-if="dbError" @retry="checkStatus" />
 
       <div v-else-if="checking" class="flex flex-col items-center gap-3 py-16">
-        <Spinner size="lg" class="text-indigo-600" />
+        <Spinner size="lg" class="text-steeldeep" />
         <span class="text-sm text-slate-500">正在检查初始化状态…</span>
       </div>
 
       <section
         v-else
-        class="w-full max-w-[420px] rounded-2xl border border-slate-200/80 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:p-9"
+        class="w-full max-w-[420px] rounded-[18px] border border-edgesoft bg-white p-7 shadow-[0_1px_2px_rgba(11,14,19,0.04),0_18px_40px_-28px_rgba(11,14,19,0.22)] sm:p-9"
       >
         <div class="mb-7">
           <h1 class="text-2xl font-semibold tracking-tight text-slate-900">初始化管理员</h1>
@@ -98,7 +98,7 @@
             class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-700"
           >
             管理员已配置，请
-            <RouterLink to="/admin" class="font-medium text-indigo-600 hover:underline">前往登录页</RouterLink>
+            <RouterLink to="/admin" class="font-medium text-steeldeep hover:underline">前往登录页</RouterLink>
             。
           </p>
           <p

@@ -24,8 +24,8 @@ defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const trackClass = computed(
   () =>
-    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:cursor-not-allowed disabled:opacity-50 ' +
-    (props.modelValue ? 'bg-indigo-600' : 'bg-slate-300')
+    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-steel/50 disabled:cursor-not-allowed disabled:opacity-50 ' +
+    (props.modelValue ? 'bg-ink' : 'bg-slate-300')
 )
 const thumbClass = computed(
   () =>

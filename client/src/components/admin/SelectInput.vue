@@ -5,7 +5,7 @@
       :disabled="disabled"
       :required="required"
       :aria-label="ariaLabel"
-      class="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-9 text-base text-slate-900 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+      class="h-11 w-full appearance-none rounded-xl border border-edgesoft bg-[#F8FAFD] focus:bg-white pl-3 pr-9 text-base text-slate-900 transition-colors focus:border-steel focus:outline-none focus:ring-2 focus:ring-steel/25 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
       <option v-if="placeholder" value="" disabled hidden>{{ placeholder }}</option>

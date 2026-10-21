@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="dataLoading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-sm text-slate-500">正在加载链接…</span>
     </div>
 
@@ -50,7 +50,7 @@
                   href="https://ico5.net/favicon-fetcher/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="font-medium text-indigo-600 underline underline-offset-2"
+                  class="font-medium text-steeldeep underline underline-offset-2"
                   >ico5</a
                 >获取
               </template>
@@ -79,7 +79,7 @@
               }}
             </p>
             <div class="mt-3 flex items-center gap-4">
-              <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-3xl">
+              <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[13px] bg-steelsoft text-3xl">
                 <LinkIcon
                   :key="iconPreviewKey"
                   :url="url"

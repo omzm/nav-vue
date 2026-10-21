@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-[13px] text-slate-500">正在加载分类…</span>
     </div>
 
@@ -60,7 +60,7 @@
                 v-for="category in pageItems"
                 :key="category.id"
                 :draggable="!isFiltering"
-                class="border-t border-slate-100 transition-colors hover:bg-indigo-50/30"
+                class="border-t border-slate-100 transition-colors hover:bg-steelsoft/50"
                 :class="!isFiltering ? 'cursor-move select-none' : ''"
                 @dragstart="onDragStart(category.id, $event)"
                 @dragenter="dragOverId = category.id"
@@ -84,7 +84,7 @@
                 </td>
                 <td class="px-4 py-3 align-middle">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-xl text-slate-600">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-xl text-slate-600">
                       <CategoryIcon :icon="category.icon" />
                     </span>
                     <span class="font-medium text-slate-800">{{ category.name }}</span>
@@ -105,7 +105,7 @@
                   <div class="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                       :aria-label="'查看 ' + category.name + ' 的链接'"
                       title="查看链接"
                       @click="go('/admin/dashboard/links?category=' + category.id)"
@@ -116,7 +116,7 @@
                     </button>
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                       :aria-label="'在 ' + category.name + ' 下添加链接'"
                       title="添加链接"
                       @click="go('/admin/dashboard/link/new?category=' + category.id)"
@@ -127,7 +127,7 @@
                     </button>
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                       :aria-label="'编辑 ' + category.name"
                       title="编辑分类"
                       @click="go('/admin/dashboard/category/' + category.id)"
@@ -162,7 +162,7 @@
             <EmptyState title="暂无分类" description="添加分类后，首页导航会按排序展示。" />
           </div>
           <article v-for="category in pageItems" :key="category.id" class="flex items-center gap-3 px-4 py-3.5">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-2xl text-slate-600">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-2xl text-slate-600">
               <CategoryIcon :icon="category.icon" />
             </span>
             <div class="min-w-0 flex-1">
@@ -205,7 +205,7 @@
             <div class="flex shrink-0 gap-0.5">
               <button
                 type="button"
-                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                 :aria-label="'编辑 ' + category.name"
                 @click="go('/admin/dashboard/category/' + category.id)"
               >

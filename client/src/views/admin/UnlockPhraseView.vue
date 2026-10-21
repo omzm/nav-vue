@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-[680px]">
     <div v-if="loading" class="flex justify-center py-12">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
     </div>
 
     <div v-else class="flex flex-col gap-5">

@@ -1,24 +1,24 @@
 <template>
-  <div class="min-h-screen bg-[#f4f6fa]">
+  <div class="min-h-screen bg-page">
     <!-- 路由切换进度条 -->
     <div
       v-if="navigating"
       class="fixed inset-x-0 top-0 z-[90] h-[3px] overflow-hidden bg-transparent"
     >
-      <div class="h-full w-1/3 animate-[nav-progress_1s_ease-in-out_infinite] rounded-r-full bg-indigo-600" />
+      <div class="h-full w-1/3 animate-[nav-progress_1s_ease-in-out_infinite] rounded-r-full bg-steel" />
     </div>
 
     <DbErrorNotice v-if="dbError" @retry="checkAuth" />
 
     <div v-else-if="checking" class="flex min-h-screen flex-col items-center justify-center gap-3">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-sm text-slate-500">正在验证管理员身份…</span>
     </div>
 
     <div v-else class="flex min-h-screen flex-col lg:flex-row">
       <!-- 桌面端侧边栏 -->
-      <aside class="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-200/80 bg-white lg:flex">
-        <div class="border-b border-slate-100 px-5 py-5">
+      <aside class="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-edge bg-white lg:flex">
+        <div class="border-b border-edgesoft px-5 py-5">
           <AdminBrand />
         </div>
         <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
@@ -32,7 +32,7 @@
             </NavItem>
           </div>
           <div v-for="group in navGroups" :key="group.title">
-            <p class="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+            <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
               {{ group.title }}
             </p>
             <div class="space-y-0.5">
@@ -48,9 +48,9 @@
             </div>
           </div>
         </nav>
-        <div class="border-t border-slate-100 p-3">
+        <div class="border-t border-edgesoft p-3">
           <div class="mb-2 flex items-center gap-2.5 px-2 py-1.5">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-steelsoft text-xs font-semibold text-steeldeep">
               {{ sessionEmailInitial }}
             </span>
             <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
@@ -72,7 +72,7 @@
 
       <!-- 移动端顶栏 -->
       <div class="lg:hidden">
-        <header class="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur">
+        <header class="sticky top-0 z-40 flex items-center justify-between border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
           <AdminBrand compact />
           <button
             type="button"
@@ -94,7 +94,7 @@
               <div class="absolute inset-0 bg-slate-900/45" @click="drawerOpen = false" />
               <Transition name="drawer-slide" appear>
                 <aside v-if="drawerOpen" class="absolute inset-y-0 left-0 flex w-64 flex-col bg-white shadow-2xl">
-                  <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4">
+                  <div class="flex items-center justify-between border-b border-edgesoft px-4 py-4">
                     <AdminBrand compact />
                     <button type="button" class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200" aria-label="关闭菜单" @click="drawerOpen = false">
                       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -105,13 +105,13 @@
                   <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4" @click="drawerOpen = false">
                     <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)" />
                     <div v-for="group in navGroups" :key="group.title">
-                      <p class="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">{{ group.title }}</p>
+                      <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">{{ group.title }}</p>
                       <div class="space-y-0.5">
                         <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)" />
                       </div>
                     </div>
                   </nav>
-                  <div class="border-t border-slate-100 p-3">
+                  <div class="border-t border-edgesoft p-3">
                     <button
                       type="button"
                       class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-slate-500 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-[0.98] active:bg-red-100"
