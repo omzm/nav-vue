@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-[680px]">
+  <div class="max-w-[560px]">
     <div v-if="loading" class="flex justify-center py-12">
       <Spinner size="lg" class="text-steeldeep" />
     </div>

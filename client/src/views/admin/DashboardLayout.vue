@@ -74,7 +74,7 @@
       <!-- 移动端顶栏 -->
       <div class="lg:hidden">
         <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
-          <span class="grid h-[30px] w-[30px] flex-none place-items-center rounded-[30%] bg-ink text-[13px] font-extrabold text-white">N</span>
+          <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-[30%] shadow-[0_0_0_1px_var(--color-edge),0_3px_10px_-6px_rgba(11,14,19,0.5)]" />
           <span class="text-[15px] font-bold tracking-[-0.01em] text-ink">导航后台</span>
           <span class="font-mono text-[10.5px] text-slate-400">v{{ version }}</span>
           <button
