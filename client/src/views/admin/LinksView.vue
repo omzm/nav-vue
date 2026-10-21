@@ -1,14 +1,13 @@
 <template>
   <div>
     <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-[13px] text-slate-500">正在加载链接…</span>
     </div>
 
     <div v-else class="flex flex-col gap-5">
-      <PageHeader title="链接管理" subtitle="管理收录的网站，快速查找、编辑与整理。">
+      <PageHeader kicker="LINKS" title="链接管理" subtitle="管理收录的网站，快速查找、编辑与整理。">
         <template #actions>
-          <AppButton :loading="refreshing" @click="refresh">刷新</AppButton>
           <AppButton variant="primary" @click="go('/admin/dashboard/link/new')">
             <template #icon>
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -22,7 +21,7 @@
 
       <Card body-class="p-0 overflow-hidden">
         <!-- 工具栏 -->
-        <div class="flex flex-wrap items-center gap-2.5 border-b border-slate-100 px-4 py-3.5">
+        <div class="flex flex-wrap items-center gap-2.5 border-b border-edgesoft px-4 py-3.5">
           <div class="min-w-[200px] flex-1 sm:max-w-xs">
             <TextInput v-model="keyword" placeholder="搜索标题、描述或网址…" aria-label="搜索链接">
               <template #prefix>
@@ -38,16 +37,22 @@
             aria-label="按分类筛选"
             class="w-40"
           />
-          <SelectInput
-            v-model="visibilityFilter"
-            :options="[
-              { value: 'all', label: '全部可见性' },
-              { value: 'public', label: '公开' },
-              { value: 'private', label: '私密' },
-            ]"
-            aria-label="按可见性筛选"
-            class="w-32"
-          />
+          <div class="flex items-center gap-2" role="group" aria-label="按可见性筛选">
+            <button
+              v-for="opt in visibilityChips"
+              :key="opt.value"
+              type="button"
+              class="h-9 rounded-full border px-4 text-[13.5px] font-medium transition-all touch-manipulation active:scale-95"
+              :class="
+                visibilityFilter === opt.value
+                  ? 'border-ink bg-ink font-semibold text-white'
+                  : 'border-edge bg-white text-slate-500 hover:border-[#CBD7E6] hover:text-ink'
+              "
+              @click="visibilityFilter = opt.value"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
           <AppButton
             v-if="hasFilter"
             size="sm"
@@ -64,13 +69,13 @@
         <!-- 批量操作条 -->
         <div
           v-if="selectedIds.size > 0"
-          class="flex flex-wrap items-center gap-2 border-b border-indigo-100 bg-indigo-50/60 px-4 py-2.5"
+          class="flex flex-wrap items-center gap-2 border-b border-edge bg-steelsoft/60 px-4 py-2.5"
           role="toolbar"
           aria-label="批量操作"
         >
           <span class="text-[13px] font-semibold text-slate-800">已选 {{ selectedIds.size }} 项</span>
           <AppButton size="sm" variant="ghost" @click="selectedIds.clear()">取消选择</AppButton>
-          <span class="h-4 w-px bg-indigo-200" />
+          <span class="h-4 w-px bg-edge" />
           <AppButton size="sm" :loading="batchBusy" @click="showMoveModal = true">
             移动到分类
           </AppButton>
@@ -80,7 +85,7 @@
           <AppButton size="sm" :loading="batchBusy" @click="handleBatchVisibility(true)">
             设为私密
           </AppButton>
-          <span class="h-4 w-px bg-indigo-200" />
+          <span class="h-4 w-px bg-edge" />
           <AppButton size="sm" variant="danger" :loading="batchBusy" @click="showBatchDelete = true">
             批量删除
           </AppButton>
@@ -96,16 +101,16 @@
                     type="checkbox"
                     :checked="allFilteredSelected"
                     :indeterminate="someFilteredSelected"
-                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-indigo-600"
+                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-steeldeep"
                     aria-label="全选当前筛选结果"
                     @change="toggleSelectAll"
                   />
                 </th>
-                <th class="px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">网站信息</th>
-                <th class="w-[130px] px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">所属分类</th>
-                <th class="w-20 px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">可见性</th>
-                <th class="w-16 px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">排序</th>
-                <th class="w-[100px] px-4 py-3 text-right text-[11px] font-medium tracking-wide text-slate-400">操作</th>
+                <th class="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">网站信息</th>
+                <th class="w-[130px] px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">所属分类</th>
+                <th class="w-20 px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">可见性</th>
+                <th class="w-16 px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">排序</th>
+                <th class="w-[100px] px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -118,9 +123,9 @@
                 v-for="link in pageLinks"
                 :key="link.id"
                 :draggable="canSort && !isFiltering"
-                class="border-t border-slate-100 transition-colors hover:bg-indigo-50/30"
+                class="border-t border-edgesoft transition-colors hover:bg-steelsoft/50"
                 :class="[
-                  selectedIds.has(link.id) ? 'bg-indigo-50/50' : '',
+                  selectedIds.has(link.id) ? 'bg-steelsoft/50' : '',
                   canSort && !isFiltering ? 'cursor-move select-none' : '',
                 ]"
                 @dragstart="onDragStart(link.id, $event)"
@@ -133,14 +138,14 @@
                   <input
                     type="checkbox"
                     :checked="selectedIds.has(link.id)"
-                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-indigo-600"
+                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-steeldeep"
                     :aria-label="'选择 ' + link.title"
                     @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
                   />
                 </td>
                 <td class="px-4 py-3 align-middle">
                   <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-xl">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-xl">
                       <LinkIcon :url="link.url" :icon="link.icon" />
                     </span>
                     <div class="min-w-0">
@@ -149,7 +154,7 @@
                         target="_blank"
                         rel="noopener noreferrer"
                         :title="link.url"
-                        class="block max-w-[320px] truncate font-medium text-slate-800 hover:text-indigo-600"
+                        class="block max-w-[320px] truncate font-medium text-slate-800 hover:text-steeldeep"
                       >{{ link.title }}</a>
                       <span class="block max-w-[320px] truncate text-xs text-slate-400" :title="link.description">
                         {{ link.description || hostname(link.url) }}
@@ -187,7 +192,7 @@
                   <div class="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                       :aria-label="'编辑 ' + link.title"
                       title="编辑链接"
                       @click="go('/admin/dashboard/link/' + link.id)"
@@ -217,19 +222,19 @@
         </div>
 
         <!-- 移动端卡片 -->
-        <div class="divide-y divide-slate-100 md:hidden">
+        <div class="divide-y divide-edgesoft md:hidden">
           <div v-if="pageLinks.length === 0" class="px-4">
             <EmptyState title="暂无链接" description="添加链接后，首页会按分类与排序展示。" />
           </div>
-          <article v-for="link in pageLinks" :key="link.id" class="flex items-start gap-3 px-4 py-3.5">
+          <article v-for="link in pageLinks" :key="link.id" class="flex items-center gap-3 px-4 py-[13px]">
             <input
               type="checkbox"
               :checked="selectedIds.has(link.id)"
-              class="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-indigo-600"
+              class="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-steeldeep"
               :aria-label="'选择 ' + link.title"
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-2xl">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-2xl">
               <LinkIcon :url="link.url" :icon="link.icon" />
             </span>
             <div class="min-w-0 flex-1">
@@ -237,43 +242,19 @@
                 <span class="truncate text-sm font-semibold text-slate-800">{{ link.title }}</span>
                 <Badge v-if="isLinkPrivate(link)" tone="private" class="shrink-0">私密</Badge>
               </div>
-              <p class="mt-0.5 truncate text-xs text-slate-400">{{ hostname(link.url) }}</p>
-              <p class="mt-0.5 text-xs text-slate-400">
+              <p class="mt-0.5 truncate font-mono text-[11px] text-slate-400">{{ hostname(link.url) }}</p>
+              <p class="mt-0.5 text-[11px] text-slate-400">
                 {{ categoryMap.get(link.category_id)?.name || '分类不存在' }} · 排序 #{{ link.order }}
               </p>
-              <div v-if="canSort" class="mt-2 flex gap-2">
-                <AppButton
-                  size="sm"
-                  class="flex-1"
-                  :disabled="isFiltering || sortIndexOf(link.id) <= 0"
-                  @click="moveLink(link.id, -1)"
-                >
-                  <template #icon>
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="m18 15-6-6-6 6" />
-                    </svg>
-                  </template>
-                  上移
-                </AppButton>
-                <AppButton
-                  size="sm"
-                  class="flex-1"
-                  :disabled="isFiltering || sortIndexOf(link.id) < 0 || sortIndexOf(link.id) >= sortableLinks.length - 1"
-                  @click="moveLink(link.id, 1)"
-                >
-                  <template #icon>
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </template>
-                  下移
-                </AppButton>
-              </div>
+            </div>
+            <div v-if="canSort" class="flex shrink-0 items-center">
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'上移 ' + link.title" :disabled="isFiltering || sortIndexOf(link.id) <= 0" @click="moveLink(link.id, -1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg></button>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'下移 ' + link.title" :disabled="isFiltering || sortIndexOf(link.id) < 0 || sortIndexOf(link.id) >= sortableLinks.length - 1" @click="moveLink(link.id, 1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
             </div>
             <div class="flex shrink-0 gap-0.5">
               <button
                 type="button"
-                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
+                class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
                 :aria-label="'编辑 ' + link.title"
                 @click="go('/admin/dashboard/link/' + link.id)"
               >
@@ -283,7 +264,7 @@
               </button>
               <button
                 type="button"
-                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100"
+                class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100"
                 :aria-label="'删除 ' + link.title"
                 @click="linkToDelete = link"
               >
@@ -296,7 +277,7 @@
         </div>
 
         <!-- 分页 -->
-        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-edgesoft px-4 py-3">
           <span class="text-xs text-slate-400">第 {{ safePage }} / {{ totalPages }} 页</span>
           <div class="flex items-center gap-2">
             <AppButton size="sm" :disabled="safePage <= 1" @click="page = safePage - 1">上一页</AppButton>
@@ -305,7 +286,7 @@
         </div>
 
         <!-- 排序提示 -->
-        <div class="flex items-center gap-1.5 border-t border-slate-100 px-4 py-2.5 text-xs text-slate-400">
+        <div class="flex items-center gap-1.5 border-t border-edgesoft px-4 py-2.5 text-xs text-slate-400">
           <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
           </svg>
@@ -313,7 +294,7 @@
           <span v-else-if="isFiltering">筛选时暂不支持拖拽排序</span>
           <span v-else>
             <span class="hidden md:inline">{{ selectedCategory?.name }} · 拖动表格行调整链接顺序</span>
-            <span class="md:hidden">用卡片上的上移 / 下移按钮，即可调整链接顺序。</span>
+            <span class="md:hidden">用行右侧的上下箭头，即可调整链接顺序。</span>
           </span>
         </div>
       </Card>
@@ -384,7 +365,7 @@ import TextInput from '@/components/admin/TextInput.vue'
 
 const router = useRouter()
 const route = useRoute()
-const { categories, links, loading, refreshing, categoryMap, loadData } = useAdminData()
+const { categories, links, loading, categoryMap, loadData } = useAdminData()
 
 const ALL = 'all'
 const PAGE_SIZE = 12
@@ -392,6 +373,11 @@ const PAGE_SIZE = 12
 const keyword = ref('')
 const categoryFilter = ref(ALL)
 const visibilityFilter = ref('all')
+const visibilityChips = [
+  { value: 'all', label: '全部' },
+  { value: 'public', label: '公开' },
+  { value: 'private', label: '私密' },
+]
 const page = ref(1)
 const selectedIds = reactive(new Set<string>())
 const linkToDelete = ref<AdminLink | null>(null)
@@ -404,7 +390,6 @@ const dragSourceId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 
 const go = (path: string) => router.push(path)
-const refresh = () => loadData(true)
 const truncate = (value: string, max: number) =>
   value.length > max ? value.slice(0, max) + '…' : value
 

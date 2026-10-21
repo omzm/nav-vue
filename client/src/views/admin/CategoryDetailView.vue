@@ -1,12 +1,12 @@
 <template>
   <div>
     <div v-if="dataLoading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-sm text-slate-500">正在加载分类…</span>
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader :title="isEdit ? '编辑分类' : '添加分类'" subtitle="设置分类名称、图标与展示方式。" />
+      <PageHeader kicker="CATEGORY" :title="isEdit ? '编辑分类' : '添加分类'" subtitle="设置分类名称、图标与展示方式。" />
 
       <form @submit.prevent="handleSubmit">
         <div class="grid gap-5 lg:grid-cols-[1fr_320px]">
@@ -31,7 +31,7 @@
               <p class="text-xs leading-5 text-slate-400">
                 {{ icon.trim() ? '图标预览已生成' : '选择图标后会在这里显示' }}
               </p>
-              <span class="mt-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-3xl text-slate-600">
+              <span class="mt-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-[13px] bg-steelsoft text-3xl text-slate-600">
                 <CategoryIcon :icon="icon" />
               </span>
             </Card>

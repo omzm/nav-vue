@@ -1,30 +1,12 @@
 <template>
   <div>
     <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-sm text-slate-500">正在加载工作台…</span>
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader title="工作台" subtitle="查看收录情况，继续整理你的分类与链接。">
-        <template #actions>
-          <AppButton :loading="refreshing" @click="refresh">
-            <template #icon>
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />
-              </svg>
-            </template>
-            刷新数据
-          </AppButton>
-          <AppButton variant="primary" @click="go('/admin/dashboard/link/new')">
-            <template #icon>
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </template>
-            添加链接
-          </AppButton>
-        </template>
+      <PageHeader kicker="WORKBENCH" title="工作台" subtitle="查看收录情况，继续整理你的分类与链接。">
       </PageHeader>
 
       <!-- 统计卡片 -->
@@ -33,15 +15,19 @@
           v-for="card in statCards"
           :key="card.label"
           type="button"
-          class="group rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md sm:p-5"
+          class="group rounded-2xl border border-edgesoft bg-white p-4 text-left shadow-[0_18px_34px_-26px_rgba(11,14,19,0.45),0_2px_6px_-4px_rgba(11,14,19,0.18)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_1px_rgba(102,145,194,0.55),0_26px_46px_-22px_rgba(102,145,194,0.42)] sm:p-5"
           :title="'查看' + card.label"
           @click="go(card.href)"
         >
-          <p class="text-[13px] text-slate-500">{{ card.label }}</p>
-          <p class="mt-1 text-[28px] font-semibold leading-9 tracking-tight text-slate-900">
+          <span
+            class="mb-3.5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-steelsoft text-steeldeep transition-all duration-300 group-hover:-rotate-3 group-hover:bg-steel group-hover:text-white"
+            v-html="card.icon"
+          />
+          <p class="font-mono text-[28px] font-semibold leading-9 tracking-tight text-ink">
             {{ card.value.toLocaleString('zh-CN') }}
           </p>
-          <p class="mt-1 text-xs text-slate-400 transition-colors group-hover:text-indigo-600">
+          <p class="mt-1.5 text-[13px] text-slate-500">{{ card.label }}</p>
+          <p class="mt-0.5 text-xs text-slate-400 transition-colors group-hover:text-steeldeep">
             {{ card.caption }}
           </p>
         </button>
@@ -56,7 +42,7 @@
                 <h2 class="text-[15px] font-semibold text-slate-900">最近添加</h2>
                 <p class="mt-0.5 text-[13px] text-slate-500">最新收录的网站与工具</p>
               </div>
-              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-indigo-600 transition-all touch-manipulation hover:text-indigo-800 active:opacity-60" @click="go('/admin/dashboard/links')">
+              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-steeldeep transition-all touch-manipulation hover:text-ink active:opacity-60" @click="go('/admin/dashboard/links')">
                 全部链接
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m9 18 6-6-6-6" />
@@ -66,7 +52,7 @@
           </template>
           <div v-if="latestLinks.length" class="-mx-1 divide-y divide-slate-50">
             <div v-for="link in latestLinks" :key="link.id" class="flex items-center gap-3 px-1 py-2.5">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-xl">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-xl">
                 <LinkIcon :url="link.url" :icon="link.icon" />
               </span>
               <div class="min-w-0 flex-1">
@@ -75,16 +61,16 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   :title="link.title"
-                  class="block truncate text-sm font-medium text-slate-800 hover:text-indigo-600"
+                  class="block truncate text-sm font-medium text-slate-800 hover:text-steeldeep"
                 >{{ link.title }}</a>
-                <span class="block truncate text-xs text-slate-400">{{ hostname(link.url) }}</span>
+                <span class="block truncate font-mono text-[11px] text-slate-400">{{ hostname(link.url) }}</span>
               </div>
               <span class="hidden shrink-0 text-xs text-slate-400 sm:block">
                 {{ categoryMap.get(link.category_id)?.name || '未分类' }}
               </span>
               <button
                 type="button"
-                class="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-indigo-600"
+                class="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-steeldeep"
                 :aria-label="'编辑 ' + link.title"
                 title="编辑链接"
                 @click="go('/admin/dashboard/link/' + link.id)"
@@ -114,7 +100,7 @@
                 <h2 class="text-[15px] font-semibold text-slate-900">分类分布</h2>
                 <p class="mt-0.5 text-[13px] text-slate-500">链接最多的 {{ topCategories.length }} 个分类</p>
               </div>
-              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-indigo-600 transition-all touch-manipulation hover:text-indigo-800 active:opacity-60" @click="go('/admin/dashboard/categories')">
+              <button type="button" class="inline-flex items-center gap-0.5 text-[13px] font-medium text-steeldeep transition-all touch-manipulation hover:text-ink active:opacity-60" @click="go('/admin/dashboard/categories')">
                 全部分类
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m9 18 6-6-6-6" />
@@ -131,7 +117,7 @@
               @click="go('/admin/dashboard/links?category=' + category.id)"
             >
               <div class="flex items-center gap-3">
-                <span class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-lg text-slate-600">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-lg text-slate-600">
                   <CategoryIcon :icon="category.icon" />
                 </span>
                 <span class="flex min-w-0 flex-1 items-center gap-1.5">
@@ -142,9 +128,9 @@
                 </span>
                 <span class="shrink-0 text-xs text-slate-400">{{ categoryCount(category.id) }} 个链接</span>
               </div>
-              <div class="ml-11 mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div class="ml-11 mt-1.5 h-1.5 overflow-hidden rounded-full bg-edgesoft">
                 <div
-                  class="h-full rounded-full bg-indigo-500 transition-[width]"
+                  class="h-full rounded-full bg-steel transition-[width]"
                   :style="{ width: (categoryCount(category.id) / maxCategoryCount) * 100 + '%' }"
                 />
               </div>
@@ -169,10 +155,10 @@
           :key="action.title"
           type="button"
           :title="action.hotkey"
-          class="group flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+          class="group flex items-center gap-3.5 rounded-[18px] border border-edgesoft bg-white p-4 text-left shadow-[0_1px_2px_rgba(11,14,19,0.04),0_18px_40px_-28px_rgba(11,14,19,0.22)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_1px_rgba(102,145,194,0.55),0_26px_46px_-22px_rgba(102,145,194,0.42)]"
           @click="action.run"
         >
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white" v-html="action.icon" />
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-steelsoft text-steeldeep transition-colors group-hover:bg-steel group-hover:text-white" v-html="action.icon" />
           <span class="min-w-0 flex-1">
             <span class="flex items-center gap-2 text-sm font-medium text-slate-800">
               {{ action.title }}
@@ -180,7 +166,7 @@
             </span>
             <span class="mt-0.5 block truncate text-xs text-slate-400">{{ action.desc }}</span>
           </span>
-          <svg class="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg class="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-steel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m9 18 6-6-6-6" />
           </svg>
         </button>
@@ -203,32 +189,43 @@ import PageHeader from '@/components/admin/PageHeader.vue'
 import Spinner from '@/components/admin/Spinner.vue'
 
 const router = useRouter()
-const { categories, links, loading, refreshing, categoryMap, linkCountByCategory, stats, loadData } =
+const { categories, links, loading, categoryMap, linkCountByCategory, stats, loadData } =
   useAdminData()
 
 const go = (path: string) => router.push(path)
-const refresh = () => loadData(true)
 
 const statCards = computed(() => [
   {
+    icon: svgWrap(
+      '<path d="M10 13a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1" />'
+    ),
     label: '收录链接',
     value: stats.value.totalLinks,
     caption: `分布于 ${stats.value.totalCategories} 个分类`,
     href: '/admin/dashboard/links',
   },
   {
+    icon: svgWrap(
+      '<circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" />'
+    ),
     label: '公开链接',
     value: stats.value.publicLinks,
     caption: '在首页默认展示',
     href: '/admin/dashboard/links?visibility=public',
   },
   {
+    icon: svgWrap(
+      '<path d="M7 11V8a5 5 0 0 1 10 0v3" /><rect x="5" y="11" width="14" height="9" rx="1.5" />'
+    ),
     label: '私密链接',
     value: stats.value.privateLinks,
     caption: '在隐私模式中展示',
     href: '/admin/dashboard/links?visibility=private',
   },
   {
+    icon: svgWrap(
+      '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />'
+    ),
     label: '导航分类',
     value: stats.value.totalCategories,
     caption: `公开 ${stats.value.publicCategories} · 私密 ${stats.value.privateCategories}`,

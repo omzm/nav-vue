@@ -1,11 +1,13 @@
 <template>
-  <div class="max-w-[680px]">
+  <div class="max-w-[560px]">
     <div v-if="loading" class="flex justify-center py-12">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
     </div>
 
     <div v-else class="flex flex-col gap-5">
       <PageHeader
+        
+        kicker="UNLOCK PHRASE"
         title="解锁口令"
         :subtitle="
           '访客在首页输入该口令后可查看私密收藏。保存后立即生效。' +

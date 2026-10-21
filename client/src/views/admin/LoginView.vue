@@ -1,10 +1,10 @@
 <template>
-  <div class="flex min-h-screen flex-col bg-[#f4f6fa]">
+  <div class="flex min-h-screen flex-col bg-page">
     <header class="flex items-center justify-between px-5 py-4 sm:px-8">
       <AdminBrand />
       <RouterLink
         to="/"
-        class="inline-flex items-center gap-1 text-xs text-indigo-600 transition-colors hover:text-indigo-800"
+        class="inline-flex items-center gap-1 text-xs text-steeldeep transition-colors hover:text-ink"
       >
         返回首页
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -17,7 +17,7 @@
       <DbErrorNotice v-if="dbError" @retry="checkStatus" />
       <section
         v-else
-        class="w-full max-w-[400px] rounded-2xl border border-slate-200/80 bg-white px-6 py-8 shadow-[0_1px_2px_rgba(15,23,42,0.05)] sm:px-8"
+        class="w-full max-w-[400px] rounded-[18px] border border-edgesoft bg-white px-6 py-8 shadow-[0_1px_2px_rgba(11,14,19,0.04),0_18px_40px_-28px_rgba(11,14,19,0.22)] sm:px-8"
       >
         <div class="mb-6">
           <h1 class="text-xl font-semibold text-slate-900">管理员登录</h1>

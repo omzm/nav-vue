@@ -1,11 +1,13 @@
 <template>
-  <div class="max-w-[680px]">
+  <div class="max-w-[560px]">
     <div v-if="loading" class="flex justify-center py-12">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
     </div>
 
     <div v-else class="flex flex-col gap-5">
       <PageHeader
+        
+        kicker="AI SETTINGS"
         title="AI 设置"
         subtitle="配置 OpenAI 兼容接口后，可在添加/编辑链接时一键生成网站描述。Key 只保存在服务端，不会暴露给前端。"
       />

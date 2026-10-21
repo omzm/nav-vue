@@ -1,14 +1,13 @@
 <template>
   <div>
     <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-[13px] text-slate-500">正在加载分类…</span>
     </div>
 
     <div v-else class="flex flex-col gap-5">
-      <PageHeader title="分类管理" subtitle="整理导航分组，让每个链接各就其位。">
+      <PageHeader kicker="CATEGORIES" title="分类管理" subtitle="整理导航分组，让每个链接各就其位。">
         <template #actions>
-          <AppButton :loading="refreshing" @click="refresh">刷新</AppButton>
           <AppButton variant="primary" @click="go('/admin/dashboard/category/new')">
             <template #icon>
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -21,7 +20,7 @@
       </PageHeader>
 
       <Card body-class="p-0 overflow-hidden">
-        <div class="flex flex-wrap items-center gap-2.5 border-b border-slate-100 px-4 py-3.5">
+        <div class="flex flex-wrap items-center gap-2.5 border-b border-edgesoft px-4 py-3.5">
           <div class="min-w-[200px] flex-1 sm:max-w-xs">
             <TextInput v-model="keyword" placeholder="搜索分类名称…" aria-label="搜索分类">
               <template #prefix>
@@ -38,196 +37,52 @@
           </span>
         </div>
 
-        <!-- 桌面端表格 -->
-        <div class="hidden overflow-x-auto md:block">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-slate-50/80 text-left">
-                <th class="w-20 px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">排序</th>
-                <th class="px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">分类名称</th>
-                <th class="w-[130px] px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">收录链接</th>
-                <th class="w-20 px-4 py-3 text-[11px] font-medium tracking-wide text-slate-400">可见性</th>
-                <th class="w-[168px] px-4 py-3 text-right text-[11px] font-medium tracking-wide text-slate-400">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="pageItems.length === 0">
-                <td colspan="5" class="px-4 py-6">
-                  <EmptyState title="暂无分类" description="添加分类后，首页导航会按排序展示。" />
-                </td>
-              </tr>
-              <tr
-                v-for="category in pageItems"
-                :key="category.id"
-                :draggable="!isFiltering"
-                class="border-t border-slate-100 transition-colors hover:bg-indigo-50/30"
-                :class="!isFiltering ? 'cursor-move select-none' : ''"
-                @dragstart="onDragStart(category.id, $event)"
-                @dragenter="dragOverId = category.id"
-                @dragover.prevent
-                @drop="onDrop"
-                @dragend="resetDrag"
-              >
-                <td class="px-4 py-3 align-middle">
-                  <span class="flex items-center gap-1.5">
-                    <svg
-                      class="h-4 w-4 shrink-0"
-                      :class="isFiltering ? 'text-slate-200' : 'cursor-move text-slate-300'"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
-                    </svg>
-                    <span class="font-mono text-xs text-slate-500">{{ String(category.order).padStart(2, '0') }}</span>
-                  </span>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-xl text-slate-600">
-                      <CategoryIcon :icon="category.icon" />
-                    </span>
-                    <span class="font-medium text-slate-800">{{ category.name }}</span>
-                  </div>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <span class="text-slate-600">{{ linkCount(category.id).total }} 个链接</span>
-                  <span v-if="linkCount(category.id).privateCount > 0" class="block text-xs text-slate-400">
-                    含 {{ linkCount(category.id).privateCount }} 个私密链接
-                  </span>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <Badge :tone="category.is_private ? 'private' : 'default'">
-                    {{ category.is_private ? '私密' : '公开' }}
-                  </Badge>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <div class="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
-                      :aria-label="'查看 ' + category.name + ' 的链接'"
-                      title="查看链接"
-                      @click="go('/admin/dashboard/links?category=' + category.id)"
-                    >
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="3" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
-                      :aria-label="'在 ' + category.name + ' 下添加链接'"
-                      title="添加链接"
-                      @click="go('/admin/dashboard/link/new?category=' + category.id)"
-                    >
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
-                      :aria-label="'编辑 ' + category.name"
-                      title="编辑分类"
-                      @click="go('/admin/dashboard/category/' + category.id)"
-                    >
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100 disabled:opacity-50"
-                      :aria-label="'删除 ' + category.name"
-                      title="删除分类"
-                      :disabled="deletingId === category.id"
-                      @click="categoryToDelete = category"
-                    >
-                      <Spinner v-if="deletingId === category.id" size="sm" />
-                      <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M5 7h14m-9 4v6m4-6v6M8 7l1 13h6l1-13M10 7V4h4v3" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- 移动端卡片 -->
-        <div class="divide-y divide-slate-100 md:hidden">
-          <div v-if="pageItems.length === 0" class="px-4">
+        <!-- 分类行：全端统一的紧凑行（图标+名称+小字一行高） -->
+        <div class="divide-y divide-edgesoft">
+          <div v-if="pageItems.length === 0" class="px-4 py-6">
             <EmptyState title="暂无分类" description="添加分类后，首页导航会按排序展示。" />
           </div>
-          <article v-for="category in pageItems" :key="category.id" class="flex items-center gap-3 px-4 py-3.5">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-2xl text-slate-600">
+          <div
+            v-for="category in pageItems"
+            :key="category.id"
+            :draggable="!isFiltering"
+            class="flex items-center gap-3 px-4 py-[13px] transition-colors hover:bg-[#F7FAFD]"
+            :class="!isFiltering ? 'cursor-move select-none' : ''"
+            @dragstart="onDragStart(category.id, $event)"
+            @dragenter="dragOverId = category.id"
+            @dragover.prevent
+            @drop="onDrop"
+            @dragend="resetDrag"
+          >
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[11px] bg-steelsoft text-2xl text-slate-600">
               <CategoryIcon :icon="category.icon" />
             </span>
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="truncate text-sm font-semibold text-slate-800">{{ category.name }}</span>
+                <span class="truncate text-sm font-semibold text-ink">{{ category.name }}</span>
                 <Badge v-if="category.is_private" tone="private" class="shrink-0">私密</Badge>
               </div>
-              <p class="mt-0.5 text-xs text-slate-400">
-                {{ linkCount(category.id).total }} 个链接 · 排序 #{{ category.order }}
+              <p class="mt-0.5 truncate font-mono text-[11px] text-slate-400">
+                {{ linkCount(category.id).total }} 条 · {{ category.is_private ? '私密' : '公开' }} · 排序 #{{ category.order }}
               </p>
-              <div v-if="!isFiltering" class="mt-2 flex gap-2">
-                <AppButton
-                  size="sm"
-                  class="flex-1"
-                  :disabled="sortIndexOf(category.id) <= 0"
-                  @click="moveCategory(category.id, -1)"
-                >
-                  <template #icon>
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="m18 15-6-6-6 6" />
-                    </svg>
-                  </template>
-                  上移
-                </AppButton>
-                <AppButton
-                  size="sm"
-                  class="flex-1"
-                  :disabled="sortIndexOf(category.id) < 0 || sortIndexOf(category.id) >= orderedCategories.length - 1"
-                  @click="moveCategory(category.id, 1)"
-                >
-                  <template #icon>
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </template>
-                  下移
-                </AppButton>
-              </div>
             </div>
-            <div class="flex shrink-0 gap-0.5">
-              <button
-                type="button"
-                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-indigo-600 active:scale-90 active:bg-slate-200"
-                :aria-label="'编辑 ' + category.name"
-                @click="go('/admin/dashboard/category/' + category.id)"
-              >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100"
-                :aria-label="'删除 ' + category.name"
-                @click="categoryToDelete = category"
-              >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M5 7h14m-9 4v6m4-6v6M8 7l1 13h6l1-13M10 7V4h4v3" />
-                </svg>
+            <div v-if="!isFiltering" class="flex shrink-0 items-center md:hidden">
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'上移 ' + category.name" :disabled="sortIndexOf(category.id) <= 0" @click="moveCategory(category.id, -1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg></button>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'下移 ' + category.name" :disabled="sortIndexOf(category.id) < 0 || sortIndexOf(category.id) >= orderedCategories.length - 1" @click="moveCategory(category.id, 1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
+            </div>
+            <div class="flex shrink-0 items-center gap-0.5">
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30 hidden md:grid" :aria-label="'查看 ' + category.name + ' 的链接'" title="查看链接" @click="go('/admin/dashboard/links?category=' + category.id)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="3" /></svg></button>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30 hidden md:grid" :aria-label="'在 ' + category.name + ' 下添加链接'" title="添加链接" @click="go('/admin/dashboard/link/new?category=' + category.id)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'编辑 ' + category.name" title="编辑分类" @click="go('/admin/dashboard/category/' + category.id)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" /></svg></button>
+              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100 disabled:opacity-50" :aria-label="'删除 ' + category.name" title="删除分类" :disabled="deletingId === category.id" @click="categoryToDelete = category">
+                <Spinner v-if="deletingId === category.id" size="sm" />
+                <template v-else><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14m-9 4v6m4-6v6M8 7l1 13h6l1-13M10 7V4h4v3" /></svg></template>
               </button>
             </div>
-          </article>
+          </div>
         </div>
 
-        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-edgesoft px-4 py-3">
           <span class="text-xs text-slate-400">第 {{ safePage }} / {{ totalPages }} 页</span>
           <div class="flex items-center gap-2">
             <AppButton size="sm" :disabled="safePage <= 1" @click="page = safePage - 1">上一页</AppButton>
@@ -236,14 +91,14 @@
         </div>
 
         <!-- 排序提示 -->
-        <div class="flex items-center gap-1.5 border-t border-slate-100 px-4 py-2.5 text-xs text-slate-400">
+        <div class="flex items-center gap-1.5 border-t border-edgesoft px-4 py-2.5 text-xs text-slate-400">
           <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
           </svg>
           <span v-if="isFiltering">清除筛选后，可调整分类在首页的顺序。</span>
           <span v-else>
-            <span class="hidden md:inline">拖动表格行，即可调整分类在首页的顺序。</span>
-            <span class="md:hidden">用卡片上的上移 / 下移按钮，即可调整分类在首页的顺序。</span>
+            <span class="hidden md:inline">拖动行，即可调整分类在首页的顺序。</span>
+            <span class="md:hidden">用行右侧的上下箭头，即可调整分类在首页的顺序。</span>
           </span>
         </div>
       </Card>
@@ -291,7 +146,7 @@ import Spinner from '@/components/admin/Spinner.vue'
 import TextInput from '@/components/admin/TextInput.vue'
 
 const router = useRouter()
-const { categories, loading, refreshing, linkCountByCategory, loadData } = useAdminData()
+const { categories, loading, linkCountByCategory, loadData } = useAdminData()
 
 const PAGE_SIZE = 12
 const keyword = ref('')
@@ -302,7 +157,6 @@ const dragSourceId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 
 const go = (path: string) => router.push(path)
-const refresh = () => loadData(true)
 const linkCount = (id: string) => linkCountByCategory.value.get(id) ?? { total: 0, privateCount: 0 }
 
 const filteredCategories = computed(() => {

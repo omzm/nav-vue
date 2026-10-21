@@ -1,24 +1,24 @@
 <template>
-  <div class="min-h-screen bg-[#f4f6fa]">
+  <div class="min-h-screen bg-page">
     <!-- 路由切换进度条 -->
     <div
       v-if="navigating"
       class="fixed inset-x-0 top-0 z-[90] h-[3px] overflow-hidden bg-transparent"
     >
-      <div class="h-full w-1/3 animate-[nav-progress_1s_ease-in-out_infinite] rounded-r-full bg-indigo-600" />
+      <div class="h-full w-1/3 animate-[nav-progress_1s_ease-in-out_infinite] rounded-r-full bg-steel" />
     </div>
 
     <DbErrorNotice v-if="dbError" @retry="checkAuth" />
 
     <div v-else-if="checking" class="flex min-h-screen flex-col items-center justify-center gap-3">
-      <Spinner size="lg" class="text-indigo-600" />
+      <Spinner size="lg" class="text-steeldeep" />
       <span class="text-sm text-slate-500">正在验证管理员身份…</span>
     </div>
 
     <div v-else class="flex min-h-screen flex-col lg:flex-row">
       <!-- 桌面端侧边栏 -->
-      <aside class="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-200/80 bg-white lg:flex">
-        <div class="border-b border-slate-100 px-5 py-5">
+      <aside class="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-edge bg-white lg:flex">
+        <div class="border-b border-edgesoft px-5 py-5">
           <AdminBrand />
         </div>
         <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
@@ -32,7 +32,7 @@
             </NavItem>
           </div>
           <div v-for="group in navGroups" :key="group.title">
-            <p class="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+            <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
               {{ group.title }}
             </p>
             <div class="space-y-0.5">
@@ -48,14 +48,15 @@
             </div>
           </div>
         </nav>
-        <div class="border-t border-slate-100 p-3">
+        <div class="border-t border-edgesoft p-3">
           <div class="mb-2 flex items-center gap-2.5 px-2 py-1.5">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-steelsoft text-xs font-semibold text-steeldeep">
               {{ sessionEmailInitial }}
             </span>
             <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
               {{ sessionEmail }}
             </span>
+            <span class="flex-none font-mono text-[10px] text-slate-400">v{{ version }}</span>
           </div>
           <button
             type="button"
@@ -72,11 +73,13 @@
 
       <!-- 移动端顶栏 -->
       <div class="lg:hidden">
-        <header class="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur">
-          <AdminBrand compact />
+        <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
+          <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-[30%] shadow-[0_0_0_1px_var(--color-edge),0_3px_10px_-6px_rgba(11,14,19,0.5)]" />
+          <span class="text-[15px] font-bold tracking-[-0.01em] text-ink">导航后台</span>
+          <span class="font-mono text-[10.5px] text-slate-400">v{{ version }}</span>
           <button
             type="button"
-            class="rounded-lg p-2 text-slate-600 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200"
+            class="ml-auto grid h-10 w-10 flex-none place-items-center rounded-[11px] border border-edge bg-white text-ink transition-all touch-manipulation active:scale-[0.93]"
             aria-label="打开导航菜单"
             @click="drawerOpen = true"
           >
@@ -94,8 +97,8 @@
               <div class="absolute inset-0 bg-slate-900/45" @click="drawerOpen = false" />
               <Transition name="drawer-slide" appear>
                 <aside v-if="drawerOpen" class="absolute inset-y-0 left-0 flex w-64 flex-col bg-white shadow-2xl">
-                  <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4">
-                    <AdminBrand compact />
+                  <div class="flex items-center justify-between border-b border-edgesoft px-4 py-4">
+                    <AdminBrand />
                     <button type="button" class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200" aria-label="关闭菜单" @click="drawerOpen = false">
                       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                         <path d="M18 6 6 18M6 6l12 12" />
@@ -105,13 +108,13 @@
                   <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4" @click="drawerOpen = false">
                     <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)" />
                     <div v-for="group in navGroups" :key="group.title">
-                      <p class="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">{{ group.title }}</p>
+                      <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">{{ group.title }}</p>
                       <div class="space-y-0.5">
                         <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)" />
                       </div>
                     </div>
                   </nav>
-                  <div class="border-t border-slate-100 p-3">
+                  <div class="border-t border-edgesoft p-3">
                     <button
                       type="button"
                       class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-slate-500 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-[0.98] active:bg-red-100"
@@ -130,9 +133,22 @@
       </Teleport>
 
       <!-- 主内容区 -->
-      <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-6xl">
-          <RouterView />
+      <main class="min-w-0 flex-1">
+        <div class="border-b border-edge px-4 py-3 sm:px-6 lg:px-8">
+          <div class="mx-auto flex max-w-6xl items-center">
+            <span class="inline-flex items-center gap-2 rounded-full border border-edge bg-white/70 px-3.5 py-[7px] font-mono text-[11px] text-[#7B8797] shadow-[0_14px_30px_-28px_rgba(11,14,19,0.55)]">
+              <span class="relative flex h-1.5 w-1.5">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-steel opacity-60"></span>
+                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-steel"></span>
+              </span>
+              数据已同步 · 刚刚刷新
+            </span>
+          </div>
+        </div>
+        <div class="px-4 py-6 sm:px-6 lg:px-8">
+          <div class="mx-auto max-w-6xl">
+            <RouterView />
+          </div>
         </div>
       </main>
     </div>
@@ -153,6 +169,7 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { get, post } from '@/api/client'
+import { version } from '../../../package.json'
 import { toast } from '@/composables/useToast'
 import AdminBrand from '@/components/admin/AdminBrand.vue'
 import AppButton from '@/components/admin/AppButton.vue'
