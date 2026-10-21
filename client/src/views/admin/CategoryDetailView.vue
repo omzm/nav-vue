@@ -6,7 +6,7 @@
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader :title="isEdit ? '编辑分类' : '添加分类'" subtitle="设置分类名称、图标与展示方式。" />
+      <PageHeader kicker="CATEGORY" :title="isEdit ? '编辑分类' : '添加分类'" subtitle="设置分类名称、图标与展示方式。" />
 
       <form @submit.prevent="handleSubmit">
         <div class="grid gap-5 lg:grid-cols-[1fr_320px]">

@@ -56,6 +56,7 @@
             <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
               {{ sessionEmail }}
             </span>
+            <span class="flex-none font-mono text-[10px] text-slate-400">v{{ version }}</span>
           </div>
           <button
             type="button"
@@ -72,11 +73,13 @@
 
       <!-- 移动端顶栏 -->
       <div class="lg:hidden">
-        <header class="sticky top-0 z-40 flex items-center justify-between border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
-          <AdminBrand compact />
+        <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
+          <span class="grid h-[30px] w-[30px] flex-none place-items-center rounded-[30%] bg-ink text-[13px] font-extrabold text-white">N</span>
+          <span class="text-[15px] font-bold tracking-[-0.01em] text-ink">导航后台</span>
+          <span class="font-mono text-[10.5px] text-slate-400">v{{ version }}</span>
           <button
             type="button"
-            class="rounded-lg p-2 text-slate-600 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200"
+            class="ml-auto grid h-10 w-10 flex-none place-items-center rounded-[11px] border border-edge bg-white text-ink transition-all touch-manipulation active:scale-[0.93]"
             aria-label="打开导航菜单"
             @click="drawerOpen = true"
           >
@@ -95,7 +98,7 @@
               <Transition name="drawer-slide" appear>
                 <aside v-if="drawerOpen" class="absolute inset-y-0 left-0 flex w-64 flex-col bg-white shadow-2xl">
                   <div class="flex items-center justify-between border-b border-edgesoft px-4 py-4">
-                    <AdminBrand compact />
+                    <AdminBrand />
                     <button type="button" class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 active:scale-90 active:bg-slate-200" aria-label="关闭菜单" @click="drawerOpen = false">
                       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                         <path d="M18 6 6 18M6 6l12 12" />
@@ -130,9 +133,22 @@
       </Teleport>
 
       <!-- 主内容区 -->
-      <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-6xl">
-          <RouterView />
+      <main class="min-w-0 flex-1">
+        <div class="border-b border-edge px-4 py-3 sm:px-6 lg:px-8">
+          <div class="mx-auto flex max-w-6xl items-center">
+            <span class="inline-flex items-center gap-2 rounded-full border border-edge bg-white/70 px-3.5 py-[7px] font-mono text-[11px] text-[#7B8797] shadow-[0_14px_30px_-28px_rgba(11,14,19,0.55)]">
+              <span class="relative flex h-1.5 w-1.5">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-steel opacity-60"></span>
+                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-steel"></span>
+              </span>
+              数据已同步 · 刚刚刷新
+            </span>
+          </div>
+        </div>
+        <div class="px-4 py-6 sm:px-6 lg:px-8">
+          <div class="mx-auto max-w-6xl">
+            <RouterView />
+          </div>
         </div>
       </main>
     </div>
@@ -153,6 +169,7 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { get, post } from '@/api/client'
+import { version } from '../../../package.json'
 import { toast } from '@/composables/useToast'
 import AdminBrand from '@/components/admin/AdminBrand.vue'
 import AppButton from '@/components/admin/AppButton.vue'

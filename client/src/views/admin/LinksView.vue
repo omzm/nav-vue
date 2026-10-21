@@ -6,9 +6,8 @@
     </div>
 
     <div v-else class="flex flex-col gap-5">
-      <PageHeader title="链接管理" subtitle="管理收录的网站，快速查找、编辑与整理。">
+      <PageHeader kicker="LINKS" title="链接管理" subtitle="管理收录的网站，快速查找、编辑与整理。">
         <template #actions>
-          <AppButton :loading="refreshing" @click="refresh">刷新</AppButton>
           <AppButton variant="primary" @click="go('/admin/dashboard/link/new')">
             <template #icon>
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -38,16 +37,22 @@
             aria-label="按分类筛选"
             class="w-40"
           />
-          <SelectInput
-            v-model="visibilityFilter"
-            :options="[
-              { value: 'all', label: '全部可见性' },
-              { value: 'public', label: '公开' },
-              { value: 'private', label: '私密' },
-            ]"
-            aria-label="按可见性筛选"
-            class="w-32"
-          />
+          <div class="flex items-center gap-2" role="group" aria-label="按可见性筛选">
+            <button
+              v-for="opt in visibilityChips"
+              :key="opt.value"
+              type="button"
+              class="h-9 rounded-full border px-4 text-[13.5px] font-medium transition-all touch-manipulation active:scale-95"
+              :class="
+                visibilityFilter === opt.value
+                  ? 'border-ink bg-ink font-semibold text-white'
+                  : 'border-edge bg-white text-slate-500 hover:border-[#CBD7E6] hover:text-ink'
+              "
+              @click="visibilityFilter = opt.value"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
           <AppButton
             v-if="hasFilter"
             size="sm"
@@ -384,7 +389,7 @@ import TextInput from '@/components/admin/TextInput.vue'
 
 const router = useRouter()
 const route = useRoute()
-const { categories, links, loading, refreshing, categoryMap, loadData } = useAdminData()
+const { categories, links, loading, categoryMap, loadData } = useAdminData()
 
 const ALL = 'all'
 const PAGE_SIZE = 12
@@ -392,6 +397,11 @@ const PAGE_SIZE = 12
 const keyword = ref('')
 const categoryFilter = ref(ALL)
 const visibilityFilter = ref('all')
+const visibilityChips = [
+  { value: 'all', label: '全部' },
+  { value: 'public', label: '公开' },
+  { value: 'private', label: '私密' },
+]
 const page = ref(1)
 const selectedIds = reactive(new Set<string>())
 const linkToDelete = ref<AdminLink | null>(null)
@@ -404,7 +414,6 @@ const dragSourceId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 
 const go = (path: string) => router.push(path)
-const refresh = () => loadData(true)
 const truncate = (value: string, max: number) =>
   value.length > max ? value.slice(0, max) + '…' : value
 

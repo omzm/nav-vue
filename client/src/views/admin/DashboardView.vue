@@ -6,25 +6,7 @@
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader title="工作台" subtitle="查看收录情况，继续整理你的分类与链接。">
-        <template #actions>
-          <AppButton :loading="refreshing" @click="refresh">
-            <template #icon>
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" />
-              </svg>
-            </template>
-            刷新数据
-          </AppButton>
-          <AppButton variant="primary" @click="go('/admin/dashboard/link/new')">
-            <template #icon>
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </template>
-            添加链接
-          </AppButton>
-        </template>
+      <PageHeader kicker="WORKBENCH" title="工作台" subtitle="查看收录情况，继续整理你的分类与链接。">
       </PageHeader>
 
       <!-- 统计卡片 -->
@@ -81,7 +63,7 @@
                   :title="link.title"
                   class="block truncate text-sm font-medium text-slate-800 hover:text-steeldeep"
                 >{{ link.title }}</a>
-                <span class="block truncate text-xs text-slate-400">{{ hostname(link.url) }}</span>
+                <span class="block truncate font-mono text-[11px] text-slate-400">{{ hostname(link.url) }}</span>
               </div>
               <span class="hidden shrink-0 text-xs text-slate-400 sm:block">
                 {{ categoryMap.get(link.category_id)?.name || '未分类' }}
@@ -207,11 +189,10 @@ import PageHeader from '@/components/admin/PageHeader.vue'
 import Spinner from '@/components/admin/Spinner.vue'
 
 const router = useRouter()
-const { categories, links, loading, refreshing, categoryMap, linkCountByCategory, stats, loadData } =
+const { categories, links, loading, categoryMap, linkCountByCategory, stats, loadData } =
   useAdminData()
 
 const go = (path: string) => router.push(path)
-const refresh = () => loadData(true)
 
 const statCards = computed(() => [
   {

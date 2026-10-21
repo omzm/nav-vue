@@ -6,9 +6,8 @@
     </div>
 
     <div v-else class="flex flex-col gap-5">
-      <PageHeader title="分类管理" subtitle="整理导航分组，让每个链接各就其位。">
+      <PageHeader kicker="CATEGORIES" title="分类管理" subtitle="整理导航分组，让每个链接各就其位。">
         <template #actions>
-          <AppButton :loading="refreshing" @click="refresh">刷新</AppButton>
           <AppButton variant="primary" @click="go('/admin/dashboard/category/new')">
             <template #icon>
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -291,7 +290,7 @@ import Spinner from '@/components/admin/Spinner.vue'
 import TextInput from '@/components/admin/TextInput.vue'
 
 const router = useRouter()
-const { categories, loading, refreshing, linkCountByCategory, loadData } = useAdminData()
+const { categories, loading, linkCountByCategory, loadData } = useAdminData()
 
 const PAGE_SIZE = 12
 const keyword = ref('')
@@ -302,7 +301,6 @@ const dragSourceId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 
 const go = (path: string) => router.push(path)
-const refresh = () => loadData(true)
 const linkCount = (id: string) => linkCountByCategory.value.get(id) ?? { total: 0, privateCount: 0 }
 
 const filteredCategories = computed(() => {

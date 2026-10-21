@@ -6,6 +6,8 @@
 
     <div v-else class="flex flex-col gap-5">
       <PageHeader
+        
+        kicker="UNLOCK PHRASE"
         title="解锁口令"
         :subtitle="
           '访客在首页输入该口令后可查看私密收藏。保存后立即生效。' +

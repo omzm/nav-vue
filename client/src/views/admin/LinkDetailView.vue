@@ -6,7 +6,7 @@
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader :title="isEdit ? '编辑链接' : '添加链接'" subtitle="填写网站信息，选择一个合适的分类。" />
+      <PageHeader kicker="LINK" :title="isEdit ? '编辑链接' : '添加链接'" subtitle="填写网站信息，选择一个合适的分类。" />
 
       <div class="grid gap-5 lg:grid-cols-[1fr_320px]">
         <Card title="链接信息" class="min-w-0">

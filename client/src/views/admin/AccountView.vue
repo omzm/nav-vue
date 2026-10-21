@@ -6,6 +6,8 @@
 
     <div v-else class="flex flex-col gap-5">
       <PageHeader
+        
+        kicker="ACCOUNT"
         title="账号安全"
         subtitle="修改管理员登录账号与密码。修改即时生效，邮箱修改后当前登录态保持有效。"
       />
