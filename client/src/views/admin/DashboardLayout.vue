@@ -147,7 +147,7 @@
             <RouterView />
           </div>
         </div>
-        <FabActions v-if="fabVisible" />
+        <FabActions />
       </main>
     </div>
 
@@ -188,10 +188,6 @@ const navigating = ref(false)
 const drawerOpen = ref(false)
 const showLogoutConfirm = ref(false)
 const loggingOut = ref(false)
-
-const fabVisible = computed(() =>
-  ['admin-dashboard', 'admin-links', 'admin-categories'].includes(String(route.name))
-)
 
 const sessionEmailInitial = computed(() =>
   (sessionEmail.value.trim().charAt(0) || '管').toUpperCase()

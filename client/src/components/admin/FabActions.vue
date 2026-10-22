@@ -28,12 +28,12 @@
       type="button"
       class="fab-act"
       style="--d: 20ms"
-      title="返回首页"
-      aria-label="返回首页"
-      @click="go('/')"
+      title="后退一页"
+      aria-label="后退一页"
+      @click="goBack"
     >
       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M10 21v-6h4v6" />
+        <path d="M19 12H5m0 0 6-6m-6 6 6 6" />
       </svg>
     </button>
     <button
@@ -47,11 +47,12 @@
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        stroke-width="2.1"
+        stroke-width="1.9"
         stroke-linecap="round"
+        stroke-linejoin="round"
         aria-hidden="true"
       >
-        <path d="M12 5v14M5 12h14" />
+        <rect x="4" y="4" width="6.5" height="6.5" rx="2" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="2" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="2" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2" />
       </svg>
     </button>
   </div>
@@ -75,6 +76,12 @@ watch(
 function go(path: string) {
   open.value = false
   void router.push(path)
+}
+
+function goBack() {
+  open.value = false
+  if (window.history.length > 1) router.back()
+  else void router.push('/admin/dashboard')
 }
 </script>
 
