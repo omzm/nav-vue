@@ -1,12 +1,12 @@
 <template>
   <div>
     <div v-if="dataLoading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-steeldeep" />
+      <Spinner size="lg" class="text-ink" />
       <span class="text-sm text-slate-500">正在加载链接…</span>
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader kicker="LINK" :title="isEdit ? '编辑链接' : '添加链接'" subtitle="填写网站信息，选择一个合适的分类。" />
+      <PageHeader :title="isEdit ? '编辑链接' : '添加链接'" subtitle="填写网站信息，选择一个合适的分类。" />
 
       <div class="grid gap-5 lg:grid-cols-[1fr_320px]">
         <Card title="链接信息" class="min-w-0">
@@ -79,7 +79,7 @@
               }}
             </p>
             <div class="mt-3 flex items-center gap-4">
-              <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[13px] bg-steelsoft text-3xl">
+              <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-3xl">
                 <LinkIcon
                   :key="iconPreviewKey"
                   :url="url"

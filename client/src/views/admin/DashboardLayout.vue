@@ -32,7 +32,7 @@
             </NavItem>
           </div>
           <div v-for="group in navGroups" :key="group.title">
-            <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+            <p class="mb-2 px-3 text-[11.5px] text-slate-400">
               {{ group.title }}
             </p>
             <div class="space-y-0.5">
@@ -50,13 +50,13 @@
         </nav>
         <div class="border-t border-edgesoft p-3">
           <div class="mb-2 flex items-center gap-2.5 px-2 py-1.5">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-steelsoft text-xs font-semibold text-steeldeep">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
               {{ sessionEmailInitial }}
             </span>
             <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
               {{ sessionEmail }}
             </span>
-            <span class="flex-none font-mono text-[10px] text-slate-400">v{{ version }}</span>
+            <span class="flex-none text-[10.5px] text-slate-400">v{{ version }}</span>
           </div>
           <button
             type="button"
@@ -74,12 +74,12 @@
       <!-- 移动端顶栏 -->
       <div class="lg:hidden">
         <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
-          <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-[30%] shadow-[0_0_0_1px_var(--color-edge),0_3px_10px_-6px_rgba(11,14,19,0.5)]" />
+          <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-full" />
           <span class="text-[15px] font-bold tracking-[-0.01em] text-ink">导航后台</span>
-          <span class="font-mono text-[10.5px] text-slate-400">v{{ version }}</span>
+          <span class="text-[10.5px] text-slate-400">v{{ version }}</span>
           <button
             type="button"
-            class="ml-auto grid h-10 w-10 flex-none place-items-center rounded-[11px] border border-edge bg-white text-ink transition-all touch-manipulation active:scale-[0.93]"
+            class="ml-auto grid h-10 w-10 flex-none place-items-center rounded-full bg-mist text-ink transition-all touch-manipulation active:scale-[0.92]"
             aria-label="打开导航菜单"
             @click="drawerOpen = true"
           >
@@ -108,7 +108,7 @@
                   <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4" @click="drawerOpen = false">
                     <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)" />
                     <div v-for="group in navGroups" :key="group.title">
-                      <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">{{ group.title }}</p>
+                      <p class="mb-2 px-3 text-[11.5px] text-slate-400">{{ group.title }}</p>
                       <div class="space-y-0.5">
                         <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)" />
                       </div>
@@ -136,11 +136,8 @@
       <main class="min-w-0 flex-1">
         <div class="border-b border-edge px-4 py-3 sm:px-6 lg:px-8">
           <div class="mx-auto flex max-w-6xl items-center">
-            <span class="inline-flex items-center gap-2 rounded-full border border-edge bg-white/70 px-3.5 py-[7px] font-mono text-[11px] text-[#7B8797] shadow-[0_14px_30px_-28px_rgba(11,14,19,0.55)]">
-              <span class="relative flex h-1.5 w-1.5">
-                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-steel opacity-60"></span>
-                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-steel"></span>
-              </span>
+            <span class="inline-flex items-center gap-2 rounded-full bg-mist px-3.5 py-[7px] text-xs text-slate-500">
+              <span class="h-[7px] w-[7px] flex-none rounded-full bg-[#22A06B]"></span>
               数据已同步 · 刚刚刷新
             </span>
           </div>
@@ -150,6 +147,7 @@
             <RouterView />
           </div>
         </div>
+        <FabActions v-if="fabVisible" />
       </main>
     </div>
 
@@ -172,6 +170,7 @@ import { get, post } from '@/api/client'
 import { version } from '../../../package.json'
 import { toast } from '@/composables/useToast'
 import AdminBrand from '@/components/admin/AdminBrand.vue'
+import FabActions from '@/components/admin/FabActions.vue'
 import AppButton from '@/components/admin/AppButton.vue'
 import DbErrorNotice from '@/components/admin/DbErrorNotice.vue'
 import Modal from '@/components/admin/Modal.vue'
@@ -189,6 +188,10 @@ const navigating = ref(false)
 const drawerOpen = ref(false)
 const showLogoutConfirm = ref(false)
 const loggingOut = ref(false)
+
+const fabVisible = computed(() =>
+  ['admin-dashboard', 'admin-links', 'admin-categories'].includes(String(route.name))
+)
 
 const sessionEmailInitial = computed(() =>
   (sessionEmail.value.trim().charAt(0) || '管').toUpperCase()

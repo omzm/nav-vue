@@ -1,260 +1,226 @@
 <template>
   <div>
     <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
-      <Spinner size="lg" class="text-steeldeep" />
+      <Spinner size="lg" class="text-ink" />
       <span class="text-[13px] text-slate-500">正在加载链接…</span>
     </div>
 
     <div v-else class="flex flex-col gap-5">
-      <PageHeader kicker="LINKS" title="链接管理" subtitle="管理收录的网站，快速查找、编辑与整理。">
-        <template #actions>
-          <AppButton variant="primary" @click="go('/admin/dashboard/link/new')">
-            <template #icon>
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" />
+      <PageHeader title="链接管理" subtitle="管理收录的网站，快速查找、编辑与整理。" />
+
+      <!-- 工具栏 -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="min-w-[200px] flex-1 sm:max-w-xs">
+          <TextInput v-model="keyword" surface="mist" placeholder="搜索标题、描述或网址…" aria-label="搜索链接">
+            <template #prefix>
+              <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
               </svg>
             </template>
-            添加链接
-          </AppButton>
-        </template>
-      </PageHeader>
-
-      <Card body-class="p-0 overflow-hidden">
-        <!-- 工具栏 -->
-        <div class="flex flex-wrap items-center gap-2.5 border-b border-edgesoft px-4 py-3.5">
-          <div class="min-w-[200px] flex-1 sm:max-w-xs">
-            <TextInput v-model="keyword" placeholder="搜索标题、描述或网址…" aria-label="搜索链接">
-              <template #prefix>
-                <svg class="h-[15px] w-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-                </svg>
-              </template>
-            </TextInput>
-          </div>
-          <SelectInput
-            v-model="categoryFilter"
-            :options="categoryOptions"
-            aria-label="按分类筛选"
-            class="w-40"
-          />
-          <div class="flex items-center gap-2" role="group" aria-label="按可见性筛选">
-            <button
-              v-for="opt in visibilityChips"
-              :key="opt.value"
-              type="button"
-              class="h-9 rounded-full border px-4 text-[13.5px] font-medium transition-all touch-manipulation active:scale-95"
-              :class="
-                visibilityFilter === opt.value
-                  ? 'border-ink bg-ink font-semibold text-white'
-                  : 'border-edge bg-white text-slate-500 hover:border-[#CBD7E6] hover:text-ink'
-              "
-              @click="visibilityFilter = opt.value"
-            >
-              {{ opt.label }}
-            </button>
-          </div>
-          <AppButton
-            v-if="hasFilter"
-            size="sm"
-            variant="ghost"
-            @click="resetFilters"
+          </TextInput>
+        </div>
+        <SelectInput
+          v-model="categoryFilter"
+          :options="categoryOptions"
+          surface="mist"
+          aria-label="按分类筛选"
+          class="w-40"
+        />
+        <div class="flex items-center gap-[7px]" role="group" aria-label="按可见性筛选">
+          <button
+            v-for="opt in visibilityChips"
+            :key="opt.value"
+            type="button"
+            class="h-[38px] rounded-full px-4 text-[13.5px] font-medium transition-all touch-manipulation active:scale-95"
+            :class="
+              visibilityFilter === opt.value
+                ? 'bg-ink font-semibold text-white'
+                : 'bg-mist text-slate-500 hover:text-ink'
+            "
+            @click="visibilityFilter = opt.value"
           >
-            重置
-          </AppButton>
-          <span class="ml-auto text-xs text-slate-400">
-            共 <strong class="text-slate-700">{{ filteredLinks.length }}</strong> 条链接
-          </span>
+            {{ opt.label }}
+          </button>
         </div>
-
-        <!-- 批量操作条 -->
-        <div
-          v-if="selectedIds.size > 0"
-          class="flex flex-wrap items-center gap-2 border-b border-edge bg-steelsoft/60 px-4 py-2.5"
-          role="toolbar"
-          aria-label="批量操作"
+        <AppButton
+          v-if="hasFilter"
+          size="sm"
+          variant="ghost"
+          @click="resetFilters"
         >
-          <span class="text-[13px] font-semibold text-slate-800">已选 {{ selectedIds.size }} 项</span>
-          <AppButton size="sm" variant="ghost" @click="selectedIds.clear()">取消选择</AppButton>
-          <span class="h-4 w-px bg-edge" />
-          <AppButton size="sm" :loading="batchBusy" @click="showMoveModal = true">
-            移动到分类
-          </AppButton>
-          <AppButton size="sm" :loading="batchBusy" @click="handleBatchVisibility(false)">
-            设为公开
-          </AppButton>
-          <AppButton size="sm" :loading="batchBusy" @click="handleBatchVisibility(true)">
-            设为私密
-          </AppButton>
-          <span class="h-4 w-px bg-edge" />
-          <AppButton size="sm" variant="danger" :loading="batchBusy" @click="showBatchDelete = true">
-            批量删除
-          </AppButton>
-        </div>
+          重置
+        </AppButton>
+        <span class="ml-auto text-xs text-slate-400">
+          共 <strong class="text-slate-700">{{ filteredLinks.length }}</strong> 条链接
+        </span>
+      </div>
 
-        <!-- 桌面端表格 -->
-        <div class="hidden overflow-x-auto md:block">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr class="bg-slate-50/80 text-left">
-                <th class="w-11 px-4 py-3">
-                  <input
-                    type="checkbox"
-                    :checked="allFilteredSelected"
-                    :indeterminate="someFilteredSelected"
-                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-steeldeep"
-                    aria-label="全选当前筛选结果"
-                    @change="toggleSelectAll"
-                  />
-                </th>
-                <th class="px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">网站信息</th>
-                <th class="w-[130px] px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">所属分类</th>
-                <th class="w-20 px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">可见性</th>
-                <th class="w-16 px-4 py-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">排序</th>
-                <th class="w-[100px] px-4 py-3 text-right font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="pageLinks.length === 0">
-                <td colspan="6" class="px-4 py-6">
-                  <EmptyState title="暂无链接" description="添加链接后，首页会按分类与排序展示。" />
-                </td>
-              </tr>
-              <tr
-                v-for="link in pageLinks"
-                :key="link.id"
-                :draggable="canSort && !isFiltering"
-                class="border-t border-edgesoft transition-colors hover:bg-steelsoft/50"
-                :class="[
-                  selectedIds.has(link.id) ? 'bg-steelsoft/50' : '',
-                  canSort && !isFiltering ? 'cursor-move select-none' : '',
-                ]"
-                @dragstart="onDragStart(link.id, $event)"
-                @dragenter="dragOverId = link.id"
-                @dragover.prevent
-                @drop="onDrop"
-                @dragend="resetDrag"
-              >
-                <td class="px-4 py-3 align-middle">
-                  <input
-                    type="checkbox"
-                    :checked="selectedIds.has(link.id)"
-                    class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-steeldeep"
-                    :aria-label="'选择 ' + link.title"
-                    @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
-                  />
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <div class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-xl">
-                      <LinkIcon :url="link.url" :icon="link.icon" />
-                    </span>
-                    <div class="min-w-0">
-                      <a
-                        :href="link.url"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        :title="link.url"
-                        class="block max-w-[320px] truncate font-medium text-slate-800 hover:text-steeldeep"
-                      >{{ link.title }}</a>
-                      <span class="block max-w-[320px] truncate text-xs text-slate-400" :title="link.description">
-                        {{ link.description || hostname(link.url) }}
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <Badge v-if="categoryMap.get(link.category_id)" :title="categoryMap.get(link.category_id)!.name">
-                    {{ truncate(categoryMap.get(link.category_id)!.name, 8) }}
-                  </Badge>
-                  <Badge v-else tone="danger">分类不存在</Badge>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <Badge :tone="isLinkPrivate(link) ? 'private' : 'default'">
-                    {{ isLinkPrivate(link) ? '私密' : '公开' }}
-                  </Badge>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <span class="flex items-center gap-1.5">
-                    <svg
-                      v-if="canSort"
-                      class="h-4 w-4 shrink-0"
-                      :class="isFiltering ? 'text-slate-200' : 'cursor-move text-slate-300'"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
-                    </svg>
-                    <span class="font-mono text-xs text-slate-500">{{ String(link.order).padStart(2, '0') }}</span>
-                  </span>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <div class="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
-                      :aria-label="'编辑 ' + link.title"
-                      title="编辑链接"
-                      @click="go('/admin/dashboard/link/' + link.id)"
-                    >
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-lg p-1.5 text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100 disabled:opacity-50"
-                      :aria-label="'删除 ' + link.title"
-                      title="删除链接"
-                      :disabled="deletingId === link.id"
-                      @click="linkToDelete = link"
-                    >
-                      <Spinner v-if="deletingId === link.id" size="sm" />
-                      <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M5 7h14m-9 4v6m4-6v6M8 7l1 13h6l1-13M10 7V4h4v3" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- 批量操作条 -->
+      <div
+        v-if="selectedIds.size > 0"
+        class="flex flex-wrap items-center gap-2 rounded-2xl bg-mist px-4 py-2.5"
+        role="toolbar"
+        aria-label="批量操作"
+      >
+        <span class="text-[13px] font-semibold text-slate-800">已选 {{ selectedIds.size }} 项</span>
+        <AppButton size="sm" variant="ghost" @click="selectedIds.clear()">取消选择</AppButton>
+        <span class="h-4 w-px bg-mist2" />
+        <AppButton size="sm" variant="primary" :loading="batchBusy" @click="showMoveModal = true">
+          移动到分类
+        </AppButton>
+        <AppButton size="sm" variant="primary" :loading="batchBusy" @click="handleBatchVisibility(false)">
+          设为公开
+        </AppButton>
+        <AppButton size="sm" variant="primary" :loading="batchBusy" @click="handleBatchVisibility(true)">
+          设为私密
+        </AppButton>
+        <span class="h-4 w-px bg-mist2" />
+        <AppButton size="sm" variant="danger" :loading="batchBusy" @click="showBatchDelete = true">
+          批量删除
+        </AppButton>
+      </div>
 
-        <!-- 移动端卡片 -->
-        <div class="divide-y divide-edgesoft md:hidden">
-          <div v-if="pageLinks.length === 0" class="px-4">
+      <!-- 列表面板：排名行 -->
+      <section class="rounded-[24px] bg-mist px-2 py-2">
+        <!-- 桌面端 -->
+        <div class="hidden md:block">
+          <div class="flex items-center gap-3 px-4 pb-1 pt-2">
+            <input
+              type="checkbox"
+              :checked="allFilteredSelected"
+              :indeterminate="someFilteredSelected"
+              class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-ink"
+              aria-label="全选当前筛选结果"
+              @change="toggleSelectAll"
+            />
+            <span class="text-xs text-slate-400">全选当前筛选结果</span>
+          </div>
+          <div v-if="pageLinks.length === 0" class="px-4 py-4">
             <EmptyState title="暂无链接" description="添加链接后，首页会按分类与排序展示。" />
           </div>
-          <article v-for="link in pageLinks" :key="link.id" class="flex items-center gap-3 px-4 py-[13px]">
+          <div
+            v-for="(link, i) in pageLinks"
+            :key="link.id"
+            :draggable="canSort && !isFiltering"
+            class="flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
+            :class="[
+              selectedIds.has(link.id) ? 'bg-white/70' : '',
+              canSort && !isFiltering ? 'cursor-move select-none' : '',
+              dragOverId === link.id ? 'bg-white/80' : '',
+            ]"
+            @dragstart="onDragStart(link.id, $event)"
+            @dragenter="dragOverId = link.id"
+            @dragover.prevent
+            @drop="onDrop"
+            @dragend="resetDrag"
+          >
             <input
               type="checkbox"
               :checked="selectedIds.has(link.id)"
-              class="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-steeldeep"
+              class="h-4 w-4 flex-none cursor-pointer rounded border-slate-300 accent-ink"
               :aria-label="'选择 ' + link.title"
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-steelsoft text-2xl">
-              <LinkIcon :url="link.url" :icon="link.icon" />
+            <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String((safePage - 1) * PAGE_SIZE + i + 1).padStart(2, '0') }}</span>
+            <span class="grid h-11 w-11 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+              <span class="flex h-full w-full items-center justify-center">
+                <LinkIcon :url="link.url" :icon="link.icon" />
+              </span>
+            </span>
+            <div class="min-w-0 flex-1">
+              <a
+                :href="link.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                :title="link.url"
+                class="block max-w-[420px] truncate text-[15px] font-semibold text-ink hover:underline"
+              >{{ link.title }}</a>
+              <span class="mt-px block max-w-[420px] truncate text-xs text-slate-500" :title="link.description">
+                {{ link.description || hostname(link.url) }}
+              </span>
+              <span class="mt-1.5 flex flex-wrap gap-1.5">
+                <span v-if="categoryMap.get(link.category_id)" class="rounded-[7px] bg-white px-2 py-[3px] text-[11.5px] text-slate-500">
+                  {{ categoryMap.get(link.category_id)!.name }}
+                </span>
+                <Badge v-else tone="danger">分类不存在</Badge>
+                <span v-if="isLinkPrivate(link)" class="rounded-[7px] bg-[#F1EAFE] px-2 py-[3px] text-[11.5px] text-[#6D4FC2]">私密</span>
+              </span>
+            </div>
+            <span class="flex-none text-right">
+              <span class="block text-[19px] font-bold leading-[1.15] text-ink tabular-nums">{{ String(link.order).padStart(2, '0') }}</span>
+              <span class="text-[11px] text-slate-400">排序</span>
+            </span>
+            <span class="flex flex-none items-center gap-0.5">
+              <button
+                type="button"
+                class="rounded-full p-2 text-slate-400 transition-all touch-manipulation hover:bg-white hover:text-ink active:scale-90"
+                :aria-label="'编辑 ' + link.title"
+                title="编辑链接"
+                @click="go('/admin/dashboard/link/' + link.id)"
+              >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="rounded-full p-2 text-slate-400 transition-all touch-manipulation hover:bg-white hover:text-red-600 active:scale-90 disabled:opacity-50"
+                :aria-label="'删除 ' + link.title"
+                title="删除链接"
+                :disabled="deletingId === link.id"
+                @click="linkToDelete = link"
+              >
+                <Spinner v-if="deletingId === link.id" size="sm" />
+                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 7h14m-9 4v6m4-6v6M8 7l1 13h6l1-13M10 7V4h4v3" />
+                </svg>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- 移动端 -->
+        <div class="md:hidden">
+          <div v-if="pageLinks.length === 0" class="px-4 py-4">
+            <EmptyState title="暂无链接" description="添加链接后，首页会按分类与排序展示。" />
+          </div>
+          <article
+            v-for="(link, i) in pageLinks"
+            :key="link.id"
+            class="flex items-center gap-3 rounded-2xl px-4 py-3"
+            :class="selectedIds.has(link.id) ? 'bg-white/70' : ''"
+          >
+            <input
+              type="checkbox"
+              :checked="selectedIds.has(link.id)"
+              class="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-ink"
+              :aria-label="'选择 ' + link.title"
+              @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
+            />
+            <span class="w-[22px] flex-none text-[13px] font-medium text-rank tabular-nums">{{ String((safePage - 1) * PAGE_SIZE + i + 1).padStart(2, '0') }}</span>
+            <span class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+              <span class="flex h-full w-full items-center justify-center">
+                <LinkIcon :url="link.url" :icon="link.icon" />
+              </span>
             </span>
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="truncate text-sm font-semibold text-slate-800">{{ link.title }}</span>
-                <Badge v-if="isLinkPrivate(link)" tone="private" class="shrink-0">私密</Badge>
+                <span class="truncate text-[15px] font-semibold text-ink">{{ link.title }}</span>
+                <span v-if="isLinkPrivate(link)" class="shrink-0 rounded-[7px] bg-[#F1EAFE] px-2 py-[2px] text-[11px] text-[#6D4FC2]">私密</span>
               </div>
-              <p class="mt-0.5 truncate font-mono text-[11px] text-slate-400">{{ hostname(link.url) }}</p>
+              <p class="mt-px truncate text-xs text-slate-500">{{ hostname(link.url) }}</p>
               <p class="mt-0.5 text-[11px] text-slate-400">
                 {{ categoryMap.get(link.category_id)?.name || '分类不存在' }} · 排序 #{{ link.order }}
               </p>
             </div>
-            <div v-if="canSort" class="flex shrink-0 items-center">
-              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'上移 ' + link.title" :disabled="isFiltering || sortIndexOf(link.id) <= 0" @click="moveLink(link.id, -1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg></button>
-              <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200 disabled:opacity-30" :aria-label="'下移 ' + link.title" :disabled="isFiltering || sortIndexOf(link.id) < 0 || sortIndexOf(link.id) >= sortableLinks.length - 1" @click="moveLink(link.id, 1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
+            <div v-if="canSort" class="flex shrink-0 flex-col">
+              <button type="button" class="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-all touch-manipulation hover:bg-white hover:text-ink active:scale-90 disabled:opacity-30" :aria-label="'上移 ' + link.title" :disabled="isFiltering || sortIndexOf(link.id) <= 0" @click="moveLink(link.id, -1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg></button>
+              <button type="button" class="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-all touch-manipulation hover:bg-white hover:text-ink active:scale-90 disabled:opacity-30" :aria-label="'下移 ' + link.title" :disabled="isFiltering || sortIndexOf(link.id) < 0 || sortIndexOf(link.id) >= sortableLinks.length - 1" @click="moveLink(link.id, 1)"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
             </div>
-            <div class="flex shrink-0 gap-0.5">
+            <div class="flex shrink-0 flex-col gap-0.5">
               <button
                 type="button"
-                class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-slate-100 hover:text-steeldeep active:scale-90 active:bg-slate-200"
+                class="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition-all touch-manipulation hover:bg-white hover:text-ink active:scale-90"
                 :aria-label="'编辑 ' + link.title"
                 @click="go('/admin/dashboard/link/' + link.id)"
               >
@@ -264,7 +230,7 @@
               </button>
               <button
                 type="button"
-                class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-all touch-manipulation hover:bg-red-50 hover:text-red-600 active:scale-90 active:bg-red-100"
+                class="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition-all touch-manipulation hover:bg-white hover:text-red-600 active:scale-90"
                 :aria-label="'删除 ' + link.title"
                 @click="linkToDelete = link"
               >
@@ -275,29 +241,29 @@
             </div>
           </article>
         </div>
+      </section>
 
-        <!-- 分页 -->
-        <div v-if="totalPages > 1" class="flex items-center justify-between border-t border-edgesoft px-4 py-3">
-          <span class="text-xs text-slate-400">第 {{ safePage }} / {{ totalPages }} 页</span>
-          <div class="flex items-center gap-2">
-            <AppButton size="sm" :disabled="safePage <= 1" @click="page = safePage - 1">上一页</AppButton>
-            <AppButton size="sm" :disabled="safePage >= totalPages" @click="page = safePage + 1">下一页</AppButton>
-          </div>
+      <!-- 分页 -->
+      <div v-if="totalPages > 1" class="flex items-center justify-between px-1">
+        <span class="text-xs text-slate-400">第 {{ safePage }} / {{ totalPages }} 页</span>
+        <div class="flex items-center gap-2">
+          <AppButton size="sm" :disabled="safePage <= 1" @click="page = safePage - 1">上一页</AppButton>
+          <AppButton size="sm" :disabled="safePage >= totalPages" @click="page = safePage + 1">下一页</AppButton>
         </div>
+      </div>
 
-        <!-- 排序提示 -->
-        <div class="flex items-center gap-1.5 border-t border-edgesoft px-4 py-2.5 text-xs text-slate-400">
-          <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
-          </svg>
-          <span v-if="!canSort">选择一个分类后，即可拖动调整链接顺序。</span>
-          <span v-else-if="isFiltering">筛选时暂不支持拖拽排序</span>
-          <span v-else>
-            <span class="hidden md:inline">{{ selectedCategory?.name }} · 拖动表格行调整链接顺序</span>
-            <span class="md:hidden">用行右侧的上下箭头，即可调整链接顺序。</span>
-          </span>
-        </div>
-      </Card>
+      <!-- 排序提示 -->
+      <div class="flex items-center gap-1.5 px-1 text-xs text-slate-400">
+        <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" />
+        </svg>
+        <span v-if="!canSort">选择一个分类后，即可拖动调整链接顺序。</span>
+        <span v-else-if="isFiltering">筛选时暂不支持拖拽排序</span>
+        <span v-else>
+          <span class="hidden md:inline">{{ selectedCategory?.name }} · 拖动列表行调整链接顺序</span>
+          <span class="md:hidden">用行右侧的上下箭头，即可调整链接顺序。</span>
+        </span>
+      </div>
     </div>
 
     <!-- 单行删除确认 -->
@@ -324,6 +290,7 @@
       <SelectInput
         v-model="moveTargetId"
         :options="moveTargetOptions"
+        surface="mist"
         placeholder="请选择分类"
         aria-label="目标分类"
       />
@@ -354,7 +321,6 @@ import { apiErrorMessage, toast } from '@/composables/useToast'
 import { getHostname as hostname } from '@/utils/icons'
 import AppButton from '@/components/admin/AppButton.vue'
 import Badge from '@/components/admin/Badge.vue'
-import Card from '@/components/admin/Card.vue'
 import EmptyState from '@/components/admin/EmptyState.vue'
 import LinkIcon from '@/components/admin/LinkIcon.vue'
 import Modal from '@/components/admin/Modal.vue'
@@ -390,8 +356,6 @@ const dragSourceId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 
 const go = (path: string) => router.push(path)
-const truncate = (value: string, max: number) =>
-  value.length > max ? value.slice(0, max) + '…' : value
 
 // URL 参数与筛选双向同步：工作台统计卡 / 分类页跳转过来时同组件不 remount，靠 query 变化更新
 function syncFromQuery() {

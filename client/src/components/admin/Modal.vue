@@ -12,7 +12,7 @@
         <Transition name="modal-pop" appear>
           <div
             v-if="open"
-            class="relative w-full rounded-2xl bg-white shadow-2xl"
+            class="relative w-full rounded-[24px] bg-white shadow-2xl"
             :class="wide ? 'max-w-2xl' : 'max-w-md'"
           >
             <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">

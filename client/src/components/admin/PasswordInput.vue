@@ -53,7 +53,7 @@ const slots = useSlots()
 const visible = ref(false)
 const inputClass = computed(() => {
   const base =
-    'h-11 w-full rounded-xl border border-edgesoft bg-[#F8FAFD] focus:bg-white pr-10 text-base text-slate-900 placeholder:text-slate-400 transition-colors focus:border-steel focus:outline-none focus:ring-2 focus:ring-steel/25 disabled:cursor-not-allowed disabled:bg-slate-50'
+    'h-11 w-full rounded-xl border-0 bg-white pr-10 text-base text-slate-900 placeholder:text-slate-400 transition-shadow focus:outline-none focus:shadow-[inset_0_0_0_1.5px_#101014] disabled:cursor-not-allowed disabled:bg-slate-50'
   return slots.prefix ? `${base} pl-9` : `${base} pl-3`
 })
 </script>

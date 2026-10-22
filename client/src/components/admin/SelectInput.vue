@@ -5,7 +5,8 @@
       :disabled="disabled"
       :required="required"
       :aria-label="ariaLabel"
-      class="h-11 w-full appearance-none rounded-xl border border-edgesoft bg-[#F8FAFD] focus:bg-white pl-3 pr-9 text-base text-slate-900 transition-colors focus:border-steel focus:outline-none focus:ring-2 focus:ring-steel/25 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+      class="h-11 w-full appearance-none rounded-xl border-0 pl-3 pr-9 text-base text-slate-900 transition-shadow focus:outline-none focus:shadow-[inset_0_0_0_1.5px_#101014] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+      :class="surface === 'mist' ? 'bg-mist focus:bg-white' : 'bg-white'"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
       <option v-if="placeholder" value="" disabled hidden>{{ placeholder }}</option>
@@ -42,8 +43,9 @@ withDefaults(
     disabled?: boolean
     required?: boolean
     ariaLabel?: string
+    surface?: 'white' | 'mist'
   }>(),
-  { placeholder: '', disabled: false, required: false, ariaLabel: '' }
+  { placeholder: '', disabled: false, required: false, ariaLabel: '', surface: 'white' }
 )
 
 defineEmits<{ 'update:modelValue': [value: string] }>()

@@ -30,13 +30,13 @@ const props = withDefaults(
 defineEmits<{ click: [event: MouseEvent] }>()
 
 const base =
-  'inline-flex select-none items-center justify-center gap-1.5 rounded-xl font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-steel/50 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation active:scale-[0.97] active:brightness-95'
+  'inline-flex select-none items-center justify-center gap-1.5 rounded-[14px] font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation active:scale-[0.97] active:brightness-95'
 
 const variants: Record<string, string> = {
   primary:
-    'bg-ink text-white shadow-[0_14px_26px_-18px_rgba(11,14,19,0.85)] hover:bg-black disabled:hover:bg-ink',
+    'bg-white text-ink border border-[#E7E7EC] shadow-[0_8px_20px_-10px_rgba(16,16,20,0.22)] hover:bg-[#FAFAFB] disabled:hover:bg-white',
   secondary:
-    'bg-white text-slate-700 border border-edge shadow-sm hover:border-[#CBD7E6] hover:bg-[#F4F7FC]',
+    'bg-mist text-ink border border-transparent hover:bg-mist2',
   danger:
     'bg-red-600 text-white shadow-sm hover:bg-red-700 disabled:hover:bg-red-600',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',

@@ -17,7 +17,7 @@
       <DbErrorNotice v-if="dbError" @retry="checkStatus" />
       <section
         v-else
-        class="w-full max-w-[400px] rounded-[18px] border border-edgesoft bg-white px-6 py-8 shadow-[0_1px_2px_rgba(11,14,19,0.04),0_18px_40px_-28px_rgba(11,14,19,0.22)] sm:px-8"
+        class="w-full max-w-[400px] rounded-[24px] bg-mist px-6 py-8 sm:px-8"
       >
         <div class="mb-6">
           <h1 class="text-xl font-semibold text-slate-900">管理员登录</h1>
