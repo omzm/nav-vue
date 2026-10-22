@@ -127,6 +127,16 @@ html {
   animation: nav-progress 1s ease-in-out infinite;
 }
 
+/* 列表行入场：轻微上浮淡入，配合行内 animation-delay 形成级联 */
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.anim-row { animation: row-in 0.38s cubic-bezier(0.32, 0.72, 0, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-row { animation: none; }
+}
+
 /* iOS 点按反馈：Tailwind preflight 把 -webkit-tap-highlight-color 全局置透明了，
    手机上点任何可交互元素都没有系统级的"点到了"闪光。:active 样式在 iOS 上又快又弱，
    两者叠加就是"点了感觉没反应"。这里给可交互元素恢复一个可见的轻触高亮。 */

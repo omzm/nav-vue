@@ -32,10 +32,11 @@
           <EmptyState title="暂无分类" description="添加分类后，首页导航会按排序展示。" />
         </div>
         <div
-          v-for="category in pageItems"
+          v-for="(category, i) in pageItems"
           :key="category.id"
           :draggable="!isFiltering"
-          class="flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
+          class="anim-row flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
+          :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
           :class="[
             !isFiltering ? 'cursor-move select-none' : '',
             dragOverId === category.id ? 'bg-white/80' : '',
@@ -47,8 +48,8 @@
           @dragend="resetDrag"
         >
           <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(sortIndexOf(category.id) + 1).padStart(2, '0') }}</span>
-          <span class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-2 text-2xl text-slate-600">
-            <CategoryIcon :icon="category.icon" />
+          <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-slate-600">
+            <CategoryIcon :icon="category.icon" class="h-[22px] w-[22px] text-[22px]" />
           </span>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5">

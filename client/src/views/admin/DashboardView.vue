@@ -20,7 +20,7 @@
           v-for="card in statCards"
           :key="card.label"
           type="button"
-          class="rounded-[22px] bg-mist p-5 text-left transition-colors touch-manipulation hover:bg-[#EFEFF2] active:bg-mist2"
+          class="rounded-[22px] bg-mist p-5 text-left transition-all duration-200 touch-manipulation hover:bg-[#EFEFF2] active:scale-[0.99] active:bg-mist2"
           :title="'查看' + card.label"
           @click="go(card.href)"
         >
@@ -53,10 +53,11 @@
             <div
               v-for="(link, i) in latestLinks"
               :key="link.id"
-              class="flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
+              class="anim-row flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
+              :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
             >
               <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
-              <span class="grid h-11 w-11 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+              <span class="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
                 <span class="flex h-full w-full items-center justify-center">
                   <LinkIcon :url="link.url" :icon="link.icon" />
                 </span>
@@ -114,12 +115,13 @@
               v-for="(category, i) in topCategories"
               :key="category.id"
               type="button"
-              class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-white/60"
+              class="anim-row flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors hover:bg-white/60"
+              :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
               @click="go('/admin/dashboard/links?category=' + category.id)"
             >
               <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
-              <span class="grid h-11 w-11 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl text-slate-600">
-                <CategoryIcon :icon="category.icon" />
+              <span class="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-white text-slate-600">
+                <CategoryIcon :icon="category.icon" class="h-[22px] w-[22px] text-[22px]" />
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-[15px] font-semibold text-ink">{{ category.name }}</span>

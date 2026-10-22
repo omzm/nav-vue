@@ -102,12 +102,13 @@
             v-for="(link, i) in pageLinks"
             :key="link.id"
             :draggable="canSort && !isFiltering"
-            class="flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
+            class="anim-row flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
             :class="[
               selectedIds.has(link.id) ? 'bg-white/70' : '',
               canSort && !isFiltering ? 'cursor-move select-none' : '',
               dragOverId === link.id ? 'bg-white/80' : '',
             ]"
+            :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
             @dragstart="onDragStart(link.id, $event)"
             @dragenter="dragOverId = link.id"
             @dragover.prevent
@@ -122,7 +123,7 @@
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
             <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String((safePage - 1) * PAGE_SIZE + i + 1).padStart(2, '0') }}</span>
-            <span class="grid h-11 w-11 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+            <span class="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
               <span class="flex h-full w-full items-center justify-center">
                 <LinkIcon :url="link.url" :icon="link.icon" />
               </span>
@@ -187,8 +188,9 @@
           <article
             v-for="(link, i) in pageLinks"
             :key="link.id"
-            class="flex items-center gap-3 rounded-2xl px-4 py-3"
+            class="anim-row flex items-center gap-3 rounded-2xl px-4 py-3"
             :class="selectedIds.has(link.id) ? 'bg-white/70' : ''"
+            :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
           >
             <input
               type="checkbox"
@@ -198,7 +200,7 @@
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
             <span class="w-[22px] flex-none text-[13px] font-medium text-rank tabular-nums">{{ String((safePage - 1) * PAGE_SIZE + i + 1).padStart(2, '0') }}</span>
-            <span class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+            <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
               <span class="flex h-full w-full items-center justify-center">
                 <LinkIcon :url="link.url" :icon="link.icon" />
               </span>

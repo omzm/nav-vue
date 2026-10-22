@@ -67,11 +67,20 @@ function onClose() {
 }
 .modal-pop-enter-active {
   transition:
-    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.18s ease;
+    transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.22s ease;
 }
 .modal-pop-enter-from {
-  transform: translateY(10px) scale(0.98);
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
+}
+.modal-pop-leave-active {
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease;
+}
+.modal-pop-leave-to {
+  transform: translateY(6px) scale(0.98);
   opacity: 0;
 }
 </style>

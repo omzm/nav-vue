@@ -144,7 +144,11 @@
         </div>
         <div class="px-4 py-6 sm:px-6 lg:px-8">
           <div class="mx-auto max-w-6xl">
-            <RouterView />
+            <RouterView v-slot="{ Component }">
+              <Transition name="page" mode="out-in">
+                <component :is="Component" :key="route.path" />
+              </Transition>
+            </RouterView>
           </div>
         </div>
         <FabActions />
@@ -334,7 +338,7 @@ onMounted(() => {
 
 .drawer-slide-enter-active,
 .drawer-slide-leave-active {
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .drawer-slide-enter-from,
 .drawer-slide-leave-to {
@@ -342,7 +346,31 @@ onMounted(() => {
 }
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.18s ease;
+  transition: opacity 0.26s ease;
+}
+.page-enter-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-active {
+  transition: opacity 0.12s ease;
+}
+.page-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+  .page-enter-from {
+    transform: none;
+  }
 }
 .modal-fade-enter-from,
 .modal-fade-leave-to {
