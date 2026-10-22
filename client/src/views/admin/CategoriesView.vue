@@ -48,8 +48,8 @@
           @dragend="resetDrag"
         >
           <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(sortIndexOf(category.id) + 1).padStart(2, '0') }}</span>
-          <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-slate-600">
-            <CategoryIcon :icon="category.icon" class="h-[22px] w-[22px] text-[22px]" />
+          <span class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-slate-600">
+            <CategoryIcon :icon="category.icon" class="h-[19px] w-[19px] text-[19px]" />
           </span>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5">

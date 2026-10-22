@@ -57,7 +57,7 @@
               :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
             >
               <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
-              <span class="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+              <span class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
                 <span class="flex h-full w-full items-center justify-center">
                   <LinkIcon :url="link.url" :icon="link.icon" />
                 </span>
@@ -120,8 +120,8 @@
               @click="go('/admin/dashboard/links?category=' + category.id)"
             >
               <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
-              <span class="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-white text-slate-600">
-                <CategoryIcon :icon="category.icon" class="h-[22px] w-[22px] text-[22px]" />
+              <span class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white text-slate-600">
+                <CategoryIcon :icon="category.icon" class="h-[19px] w-[19px] text-[19px]" />
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-[15px] font-medium text-ink">{{ category.name }}</span>

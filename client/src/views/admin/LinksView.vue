@@ -123,7 +123,7 @@
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
             <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String((safePage - 1) * PAGE_SIZE + i + 1).padStart(2, '0') }}</span>
-            <span class="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+            <span class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
               <span class="flex h-full w-full items-center justify-center">
                 <LinkIcon :url="link.url" :icon="link.icon" />
               </span>
@@ -200,7 +200,7 @@
               @change="toggleSelect(link.id, ($event.target as HTMLInputElement).checked)"
             />
             <span class="w-[22px] flex-none text-[13px] font-medium text-rank tabular-nums">{{ String((safePage - 1) * PAGE_SIZE + i + 1).padStart(2, '0') }}</span>
-            <span class="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+            <span class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
               <span class="flex h-full w-full items-center justify-center">
                 <LinkIcon :url="link.url" :icon="link.icon" />
               </span>
