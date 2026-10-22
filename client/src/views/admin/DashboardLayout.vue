@@ -328,15 +328,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@keyframes nav-progress {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(300%);
-  }
-}
-
 .drawer-slide-enter-active,
 .drawer-slide-leave-active {
   transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
