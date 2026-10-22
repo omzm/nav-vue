@@ -53,7 +53,7 @@
           </span>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5">
-              <span class="truncate text-[15px] font-semibold text-ink">{{ category.name }}</span>
+              <span class="truncate text-[15px] font-medium text-ink">{{ category.name }}</span>
               <Badge v-if="category.is_private" tone="private" class="shrink-0">私密</Badge>
             </div>
             <p class="mt-px truncate text-xs text-slate-500">
@@ -61,7 +61,7 @@
             </p>
           </div>
           <span class="flex-none text-right">
-            <span class="block text-[19px] font-bold leading-[1.15] text-ink tabular-nums">{{ linkCount(category.id).total }}</span>
+            <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ linkCount(category.id).total }}</span>
             <span class="text-[11px] text-slate-400">链接</span>
           </span>
           <div v-if="!isFiltering" class="flex shrink-0 flex-col md:hidden">

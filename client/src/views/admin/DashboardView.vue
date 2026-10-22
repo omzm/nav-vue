@@ -8,7 +8,7 @@
     <div v-else class="flex flex-col gap-6">
       <!-- 问候 -->
       <div>
-        <h1 class="text-[29px] font-bold leading-[1.15] tracking-[-0.025em] text-ink">
+        <h1 class="text-[29px] font-semibold leading-[1.15] tracking-[-0.025em] text-ink">
           {{ greeting }}<template v-if="displayName">，{{ displayName }}</template>
         </h1>
         <p class="mt-2 text-sm text-slate-500">收藏夹今天的情况都在这里。</p>
@@ -28,7 +28,7 @@
             <span class="pt-[5px] text-[13.5px] font-medium text-slate-500">{{ card.label }}</span>
             <span class="grid h-[34px] w-[34px] flex-none place-items-center rounded-full bg-white text-slate-700" v-html="card.icon" />
           </span>
-          <span class="mt-2.5 block text-[31px] font-bold leading-[1.1] tracking-[-0.02em] text-ink tabular-nums">
+          <span class="mt-2.5 block text-[31px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink tabular-nums">
             {{ card.value.toLocaleString('zh-CN') }}
           </span>
           <span class="mt-[3px] block text-xs text-slate-400">{{ card.caption }}</span>
@@ -68,7 +68,7 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   :title="link.title"
-                  class="block truncate text-[15px] font-semibold text-ink hover:underline"
+                  class="block truncate text-[15px] font-medium text-ink hover:underline"
                 >{{ link.title }}</a>
                 <span class="mt-px block truncate text-xs text-slate-500">{{ hostname(link.url) }}</span>
               </div>
@@ -124,11 +124,11 @@
                 <CategoryIcon :icon="category.icon" class="h-[22px] w-[22px] text-[22px]" />
               </span>
               <span class="min-w-0 flex-1">
-                <span class="block truncate text-[15px] font-semibold text-ink">{{ category.name }}</span>
+                <span class="block truncate text-[15px] font-medium text-ink">{{ category.name }}</span>
                 <span class="mt-px block text-xs text-slate-500">{{ categoryCount(category.id) }} 个链接 · {{ category.is_private ? '私密' : '公开' }}</span>
               </span>
               <span class="flex-none text-right">
-                <span class="block text-[19px] font-bold leading-[1.15] text-ink tabular-nums">{{ categoryCount(category.id) }}</span>
+                <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ categoryCount(category.id) }}</span>
                 <span class="text-[11px] text-slate-400">链接</span>
               </span>
             </button>

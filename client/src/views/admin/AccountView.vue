@@ -14,7 +14,7 @@
 
       <Card>
         <template #header>
-          <h2 class="text-[15px] font-semibold text-slate-900">登录用户名</h2>
+          <h2 class="text-[15px] font-medium text-slate-900">登录用户名</h2>
           <p class="mt-0.5 text-[13px] text-slate-500">
             当前：<span class="font-medium text-slate-700">{{ currentUsername || '未设置（仅邮箱登录）' }}</span>
           </p>
@@ -47,7 +47,7 @@
 
       <Card>
         <template #header>
-          <h2 class="text-[15px] font-semibold text-slate-900">登录邮箱</h2>
+          <h2 class="text-[15px] font-medium text-slate-900">登录邮箱</h2>
           <p class="mt-0.5 text-[13px] text-slate-500">
             当前：<span class="font-medium text-slate-700">{{ currentEmail || '—' }}</span>
           </p>
@@ -78,7 +78,7 @@
 
       <Card>
         <template #header>
-          <h2 class="text-[15px] font-semibold text-slate-900">登录密码</h2>
+          <h2 class="text-[15px] font-medium text-slate-900">登录密码</h2>
           <p class="mt-0.5 text-[13px] text-slate-500">至少 6 位，修改后下次登录使用新密码。</p>
         </template>
         <div class="flex flex-col gap-4">

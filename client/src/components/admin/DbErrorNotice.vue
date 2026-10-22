@@ -6,7 +6,7 @@
           <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
         </svg>
       </div>
-      <h1 class="text-lg font-semibold text-slate-900">数据库连接失败</h1>
+      <h1 class="text-lg font-medium text-slate-900">数据库连接失败</h1>
       <p class="mt-2 text-sm leading-6 text-slate-500">
         无法读取管理员配置，请检查数据库服务状态后重试。
       </p>

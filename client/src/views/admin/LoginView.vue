@@ -20,7 +20,7 @@
         class="w-full max-w-[400px] rounded-[24px] bg-mist px-6 py-8 sm:px-8"
       >
         <div class="mb-6">
-          <h1 class="text-xl font-semibold text-slate-900">管理员登录</h1>
+          <h1 class="text-xl font-medium text-slate-900">管理员登录</h1>
           <p class="mt-1.5 text-[13px] text-slate-500">欢迎回来，登录后继续整理你的收藏。</p>
         </div>
 

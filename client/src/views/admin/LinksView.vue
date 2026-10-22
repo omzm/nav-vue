@@ -34,7 +34,7 @@
             class="h-[38px] rounded-full px-4 text-[13.5px] font-medium transition-all touch-manipulation active:scale-95"
             :class="
               visibilityFilter === opt.value
-                ? 'bg-ink font-semibold text-white'
+                ? 'bg-ink font-medium text-white'
                 : 'bg-mist text-slate-500 hover:text-ink'
             "
             @click="visibilityFilter = opt.value"
@@ -62,7 +62,7 @@
         role="toolbar"
         aria-label="批量操作"
       >
-        <span class="text-[13px] font-semibold text-slate-800">已选 {{ selectedIds.size }} 项</span>
+        <span class="text-[13px] font-medium text-slate-800">已选 {{ selectedIds.size }} 项</span>
         <AppButton size="sm" variant="ghost" @click="selectedIds.clear()">取消选择</AppButton>
         <span class="h-4 w-px bg-mist2" />
         <AppButton size="sm" variant="primary" :loading="batchBusy" @click="showMoveModal = true">
@@ -134,7 +134,7 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 :title="link.url"
-                class="block max-w-[420px] truncate text-[15px] font-semibold text-ink hover:underline"
+                class="block max-w-[420px] truncate text-[15px] font-medium text-ink hover:underline"
               >{{ link.title }}</a>
               <span class="mt-px block max-w-[420px] truncate text-xs text-slate-500" :title="link.description">
                 {{ link.description || hostname(link.url) }}
@@ -148,7 +148,7 @@
               </span>
             </div>
             <span class="flex-none text-right">
-              <span class="block text-[19px] font-bold leading-[1.15] text-ink tabular-nums">{{ String(link.order).padStart(2, '0') }}</span>
+              <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ String(link.order).padStart(2, '0') }}</span>
               <span class="text-[11px] text-slate-400">排序</span>
             </span>
             <span class="flex flex-none items-center gap-0.5">
@@ -207,7 +207,7 @@
             </span>
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="truncate text-[15px] font-semibold text-ink">{{ link.title }}</span>
+                <span class="truncate text-[15px] font-medium text-ink">{{ link.title }}</span>
                 <span v-if="isLinkPrivate(link)" class="shrink-0 rounded-[7px] bg-[#F1EAFE] px-2 py-[2px] text-[11px] text-[#6D4FC2]">私密</span>
               </div>
               <p class="mt-px truncate text-xs text-slate-500">{{ hostname(link.url) }}</p>

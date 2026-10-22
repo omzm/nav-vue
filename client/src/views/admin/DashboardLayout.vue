@@ -50,7 +50,7 @@
         </nav>
         <div class="border-t border-edgesoft p-3">
           <div class="mb-2 flex items-center gap-2.5 px-2 py-1.5">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-medium text-white">
               {{ sessionEmailInitial }}
             </span>
             <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
@@ -75,7 +75,7 @@
       <div class="lg:hidden">
         <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
           <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-full" />
-          <span class="text-[15px] font-bold tracking-[-0.01em] text-ink">导航后台</span>
+          <span class="text-[15px] font-semibold tracking-[-0.01em] text-ink">导航后台</span>
           <span class="text-[10.5px] text-slate-400">v{{ version }}</span>
           <button
             type="button"
