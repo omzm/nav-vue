@@ -3,7 +3,7 @@
     <img src="/icon.svg" alt="收藏夹" class="h-8 w-8 rounded-full" />
     <span v-if="!compact" class="flex flex-col leading-tight">
       <span class="text-[15px] font-medium tracking-[-0.01em] text-ink">导航后台</span>
-      <span class="text-[11px] text-slate-400">收藏夹 · 内容管理</span>
+      <span class="text-[11px] text-slate-500">收藏夹 · 内容管理</span>
     </span>
   </RouterLink>
 </template>

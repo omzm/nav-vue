@@ -32,7 +32,7 @@
             </NavItem>
           </div>
           <div v-for="group in navGroups" :key="group.title">
-            <p class="mb-2 px-3 text-[11.5px] text-slate-400">
+            <p class="mb-2 px-3 text-[11.5px] text-slate-500">
               {{ group.title }}
             </p>
             <div class="space-y-0.5">
@@ -53,10 +53,10 @@
             <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-medium text-white">
               {{ sessionEmailInitial }}
             </span>
-            <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
+            <span class="min-w-0 flex-1 truncate text-[13px] text-slate-700" :title="sessionEmail">
               {{ sessionEmail }}
             </span>
-            <span class="flex-none text-[10.5px] text-slate-400">v{{ version }}</span>
+            <span class="flex-none text-[10.5px] text-slate-500">v{{ version }}</span>
           </div>
           <button
             type="button"
@@ -76,7 +76,7 @@
         <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
           <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-full" />
           <span class="text-[15px] font-medium tracking-[-0.01em] text-ink">导航后台</span>
-          <span class="text-[10.5px] text-slate-400">v{{ version }}</span>
+          <span class="text-[10.5px] text-slate-500">v{{ version }}</span>
           <button
             type="button"
             class="ml-auto grid h-10 w-10 flex-none place-items-center text-ink transition-transform touch-manipulation active:scale-[0.9]"
@@ -108,7 +108,7 @@
                   <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4" @click="drawerOpen = false">
                     <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)" />
                     <div v-for="group in navGroups" :key="group.title">
-                      <p class="mb-2 px-3 text-[11.5px] text-slate-400">{{ group.title }}</p>
+                      <p class="mb-2 px-3 text-[11.5px] text-slate-500">{{ group.title }}</p>
                       <div class="space-y-0.5">
                         <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)" />
                       </div>

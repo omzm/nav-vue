@@ -61,7 +61,7 @@
             </p>
           </div>
           <span class="flex-none text-right">
-            <span class="block text-[19px] font-medium leading-[1.15] text-ink tabular-nums">{{ linkCount(category.id).total }}</span>
+            <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ linkCount(category.id).total }}</span>
             <span class="text-[11px] text-slate-400">链接</span>
           </span>
           <div v-if="!isFiltering" class="flex shrink-0 flex-col md:hidden">

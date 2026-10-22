@@ -148,7 +148,7 @@
               </span>
             </div>
             <span class="flex-none text-right">
-              <span class="block text-[19px] font-medium leading-[1.15] text-ink tabular-nums">{{ String(link.order).padStart(2, '0') }}</span>
+              <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ String(link.order).padStart(2, '0') }}</span>
               <span class="text-[11px] text-slate-400">排序</span>
             </span>
             <span class="flex flex-none items-center gap-0.5">

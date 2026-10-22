@@ -28,7 +28,7 @@
             <span class="pt-[5px] text-[13.5px] font-medium text-slate-500">{{ card.label }}</span>
             <span class="grid h-[34px] w-[34px] flex-none place-items-center rounded-full bg-white text-slate-700" v-html="card.icon" />
           </span>
-          <span class="mt-2.5 block text-[31px] font-medium leading-[1.1] tracking-[-0.02em] text-ink tabular-nums">
+          <span class="mt-2.5 block text-[31px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink tabular-nums">
             {{ card.value.toLocaleString('zh-CN') }}
           </span>
           <span class="mt-[3px] block text-xs text-slate-400">{{ card.caption }}</span>
@@ -128,7 +128,7 @@
                 <span class="mt-px block text-xs text-slate-500">{{ categoryCount(category.id) }} 个链接 · {{ category.is_private ? '私密' : '公开' }}</span>
               </span>
               <span class="flex-none text-right">
-                <span class="block text-[19px] font-medium leading-[1.15] text-ink tabular-nums">{{ categoryCount(category.id) }}</span>
+                <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ categoryCount(category.id) }}</span>
                 <span class="text-[11px] text-slate-400">链接</span>
               </span>
             </button>
