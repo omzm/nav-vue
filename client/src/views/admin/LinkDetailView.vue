@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="dataLoading" class="flex flex-col items-center justify-center gap-3 py-24">
+    <div v-if="dataLoading" class="flex min-h-[62vh] flex-col items-center justify-center gap-3">
       <Spinner size="lg" class="text-ink" />
       <span class="text-sm text-slate-500">正在加载链接…</span>
     </div>

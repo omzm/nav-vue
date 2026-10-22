@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-24">
+    <div v-if="loading" class="flex min-h-[62vh] flex-col items-center justify-center gap-3">
       <Spinner size="lg" class="text-ink" />
       <span class="text-[13px] text-slate-500">正在加载分类…</span>
     </div>
