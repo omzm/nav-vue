@@ -5,6 +5,7 @@ import { getDailyQuote } from '../lib/dailyQuote.js';
 import { isRateLimited, getClientIp } from '../lib/rateLimit.js';
 import { timingSafeEqualStr } from '../lib/adminAuth.js';
 import { env } from '../lib/env.js';
+import { normalizeUrl } from '../lib/url.js';
 import type { NavCategory } from '../types.js';
 
 const router = Router();
@@ -70,18 +71,6 @@ router.get('/submit/config', async (_req, res) => {
  */
 const MAX_SUBMITS_PER_HOUR = 20;
 
-function normalizeUrlForCompare(raw: string): string {
-  const trimmed = raw.trim();
-  try {
-    const parsed = new URL(trimmed);
-    parsed.hostname = parsed.hostname.toLowerCase();
-    let result = parsed.toString();
-    if (result.length > 1 && result.endsWith('/')) result = result.slice(0, -1);
-    return result;
-  } catch {
-    return trimmed;
-  }
-}
 
 function isPasswordValid(input: string, expected: string): boolean {
   if (!input || !expected) return false;
@@ -143,7 +132,7 @@ router.post('/submit', async (req, res) => {
     return res.status(429).json({ ok: false, error: 'rate_limited' });
   }
 
-  const normalized = normalizeUrlForCompare(rawUrl);
+  const normalized = normalizeUrl(rawUrl);
   const { data: existing, error: dupError } = await supabase.from('links').select('id').eq('url', normalized).limit(1);
   if (dupError) {
     console.error('提交收录：去重检查失败', dupError);

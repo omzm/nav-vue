@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { get, post, put } from '@/api/client'
 import { loadAdminData, refreshSnapshot, useAdminData } from '@/composables/useAdminData'
@@ -194,7 +194,7 @@ let iconFetchTimer: ReturnType<typeof setTimeout> | null = null
 
 const saving = ref(false)
 const saveAndContinueLoading = ref(false)
-const dataLoading = ref(false)
+const dataLoading = ref(isEdit.value)
 const aiGenerating = ref(false)
 const savingRef = ref(false)
 
@@ -409,6 +409,10 @@ function confirmDuplicateSave() {
   void saveLink(continueAdding, true)
 }
 
+onUnmounted(() => {
+  if (iconFetchTimer) clearTimeout(iconFetchTimer)
+})
+
 onMounted(async () => {
   await loadAdminData()
   // 新建：URL 带有 ?category= 预设分类时自动选中
@@ -420,7 +424,6 @@ onMounted(async () => {
     return
   }
   // 编辑：从共享数据里取当前链接
-  dataLoading.value = true
   try {
     const link = links.value.find((l) => l.id === linkId.value)
     if (!link) {

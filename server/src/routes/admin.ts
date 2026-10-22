@@ -10,6 +10,7 @@ import {
   verifyAdminToken,
 } from '../lib/adminAuth.js';
 import { ADMIN_EMAIL_KEY, getDbAdminEmail, getDbAdminUsername, setDbAdminUsername } from '../lib/adminConfig.js';
+import { normalizeUrl } from '../lib/url.js';
 
 const router = Router();
 router.use(requireAdmin);
@@ -128,18 +129,6 @@ router.delete('/categories/:id', async (req, res) => {
 
 /* ---------------- 链接 CRUD ---------------- */
 
-function normalizeUrl(raw: string): string {
-  const trimmed = raw.trim();
-  try {
-    const parsed = new URL(trimmed);
-    parsed.hostname = parsed.hostname.toLowerCase();
-    let result = parsed.toString();
-    if (result.length > 1 && result.endsWith('/')) result = result.slice(0, -1);
-    return result;
-  } catch {
-    return trimmed;
-  }
-}
 
 /** URL 去重检查（编辑时排除自身） */
 router.get('/links/check-duplicate', async (req, res) => {
@@ -205,6 +194,11 @@ router.put('/links/:id', async (req, res) => {
   const is_private = Boolean(req.body?.is_private);
   if (!category_id) return res.status(400).json({ error: '请选择分类' });
   if (!title) return res.status(400).json({ error: '请填写网站名称' });
+  try {
+    new URL(rawUrl);
+  } catch {
+    return res.status(400).json({ error: 'URL 格式不正确' });
+  }
   try {
     const { data: updated, error } = await createServiceClient()
       .from('links')
@@ -581,8 +575,8 @@ router.put('/account', async (req: AdminRequest, res) => {
     if (cleanEmail && !EMAIL_RE.test(cleanEmail)) {
       return res.status(400).json({ ok: false, error: '新邮箱格式不正确' });
     }
-    if (cleanPassword && cleanPassword.length < 6) {
-      return res.status(400).json({ ok: false, error: '新密码至少 6 位' });
+    if (cleanPassword && cleanPassword.length < 8) {
+      return res.status(400).json({ ok: false, error: '新密码至少 8 位' });
     }
 
     const identity = await verifyAdminIdentity(req, currentPassword);

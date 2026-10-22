@@ -1,12 +1,13 @@
 /** 统一的 API 请求封装：同源 /api，自动携带 cookie */
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const { headers: extraHeaders, ...rest } = init
   const res = await fetch(`/api${path}`, {
     credentials: 'include',
+    ...rest,
     headers: {
       'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
+      ...(extraHeaders ?? {}),
     },
-    ...init,
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {

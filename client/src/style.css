@@ -123,10 +123,6 @@ html {
     transform: translateX(400%);
   }
 }
-.nav-progress-bar {
-  animation: nav-progress 1s ease-in-out infinite;
-}
-
 /* 列表行入场：轻微上浮淡入，配合行内 animation-delay 形成级联 */
 @keyframes row-in {
   from { opacity: 0; transform: translateY(6px); }

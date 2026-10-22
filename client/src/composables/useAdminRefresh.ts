@@ -4,7 +4,7 @@ import { get, post } from '@/api/client';
 interface AuthStatus {
   configured: boolean;
   sessionEmail: string | null;
-  dbError?: string;
+  dbError?: boolean;
 }
 
 /**

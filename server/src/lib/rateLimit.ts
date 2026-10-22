@@ -5,15 +5,17 @@
  */
 const hits = new Map<string, number[]>();
 const MAX_KEYS = 10_000;
+/** 清扫时按全站最大的限流窗口判断过期（登录窗 10 分钟）；用调用方的小窗口清扫会误删大窗口 key 的记录 */
+const MAX_WINDOW_MS = 10 * 60_000;
 let lastSweep = 0;
 
 export function isRateLimited(key: string, limit: number, windowMs = 60_000): boolean {
   const now = Date.now();
 
-  if (now - lastSweep > windowMs && hits.size > 0) {
+  if (now - lastSweep > MAX_WINDOW_MS && hits.size > 0) {
     lastSweep = now;
     for (const [k, list] of hits) {
-      if (!list.some((t) => now - t < windowMs)) {
+      if (!list.some((t) => now - t < MAX_WINDOW_MS)) {
         hits.delete(k);
       }
     }

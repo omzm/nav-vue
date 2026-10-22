@@ -79,7 +79,7 @@
       <Card>
         <template #header>
           <h2 class="text-[15px] font-medium text-slate-900">登录密码</h2>
-          <p class="mt-0.5 text-[13px] text-slate-500">至少 6 位，修改后下次登录使用新密码。</p>
+          <p class="mt-0.5 text-[13px] text-slate-500">至少 8 位，修改后下次登录使用新密码。</p>
         </template>
         <div class="flex flex-col gap-4">
           <Field label="当前密码">
@@ -92,7 +92,7 @@
           <Field label="新密码">
             <PasswordInput
               v-model="newPassword"
-              placeholder="至少 6 位"
+              placeholder="至少 8 位"
               autocomplete="new-password"
             />
           </Field>
@@ -203,8 +203,8 @@ async function handleSaveEmail() {
 }
 
 async function handleSavePassword() {
-  if (newPassword.value.length < 6) {
-    toast.error('新密码至少 6 位')
+  if (newPassword.value.length < 8) {
+    toast.error('新密码至少 8 位')
     return
   }
   if (newPassword.value !== confirmPassword.value) {

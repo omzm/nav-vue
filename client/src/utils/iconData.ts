@@ -2,7 +2,7 @@
  * 内置图标数据（17 个 `icon-xxx`，24x24 stroke SVG），与 nav 的 IconFont.tsx 同源。
  * 前台 CategoryIcon / 后台图标选择器共用。
  */
-export const ICON_PATHS: Record<string, string> = {
+const ICON_PATHS: Record<string, string> = {
   'icon-book':
     'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15.5A2.5 2.5 0 0 1 17.5 21H6.5A2.5 2.5 0 0 1 4 18.5v-13Zm3 0h10M7 9h8M7 13h6',
   'icon-chart': 'M4 19h16M7 16V9m5 7V5m5 11v-6',
@@ -52,7 +52,7 @@ export const BUILTIN_ICON_NAMES = [
 ];
 
 /** 从 class 列表里挑出 icon-xxx；找不到时回退 icon-folder */
-export function normalizeIconName(name: string): string {
+function normalizeIconName(name: string): string {
   const classes = name.trim().split(/\s+/);
   return classes.find((item) => item.startsWith('icon-')) || classes[0] || 'icon-folder';
 }
