@@ -24,11 +24,7 @@
         <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           <div>
             <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)">
-              <template #icon>
-                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M7 14v3m4-7v7m4-10v10m4-14v14" />
-                </svg>
-              </template>
+              <template #icon><component :is="dashboardIcon" /></template>
             </NavItem>
           </div>
           <div v-for="group in navGroups" :key="group.title">
@@ -106,11 +102,15 @@
                     </button>
                   </div>
                   <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4" @click="drawerOpen = false">
-                    <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)" />
+                    <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)">
+                      <template #icon><component :is="dashboardIcon" /></template>
+                    </NavItem>
                     <div v-for="group in navGroups" :key="group.title">
                       <p class="mb-2 px-3 text-[11.5px] text-slate-500">{{ group.title }}</p>
                       <div class="space-y-0.5">
-                        <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)" />
+                        <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)">
+                          <template #icon><component :is="item.icon" /></template>
+                        </NavItem>
                       </div>
                     </div>
                   </nav>
@@ -197,23 +197,24 @@ const sessionEmailInitial = computed(() =>
   (sessionEmail.value.trim().charAt(0) || '管').toUpperCase()
 )
 
-function svgIcon(paths: string) {
+function svgIcon(markup: string) {
   return () =>
-    h(
-      'svg',
-      {
-        class: 'h-[18px] w-[18px]',
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: 'currentColor',
-        'stroke-width': 1.9,
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-        'aria-hidden': true,
-      },
-      paths.split('|').map((d) => h('path', { d }))
-    )
+    h('svg', {
+      class: 'h-[18px] w-[18px]',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': 1.9,
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      'aria-hidden': true,
+      innerHTML: markup,
+    })
 }
+
+const dashboardIcon = svgIcon(
+  '<rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/>'
+)
 
 const navGroups = [
   {
@@ -222,12 +223,12 @@ const navGroups = [
       {
         label: '分类管理',
         path: '/admin/dashboard/categories',
-        icon: svgIcon('M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z'),
+        icon: svgIcon('<path d="M3.5 7a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7Z"/>'),
       },
       {
         label: '链接管理',
         path: '/admin/dashboard/links',
-        icon: svgIcon('M10 13a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1|M14 11a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1'),
+        icon: svgIcon('<path d="M10 14a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 10a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"/>'),
       },
     ],
   },
@@ -237,17 +238,17 @@ const navGroups = [
       {
         label: 'AI 设置',
         path: '/admin/dashboard/ai-settings',
-        icon: svgIcon('M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z|M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z'),
+        icon: svgIcon('<path d="M12 3.5 13.8 9l5.5 1.8-5.5 1.8L12 18l-1.8-5.4L4.7 10.8 10.2 9 12 3.5Z"/><path d="M18.6 15.4l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/>'),
       },
       {
         label: '解锁口令',
         path: '/admin/dashboard/unlock-phrase',
-        icon: svgIcon('M7 11V8a5 5 0 0 1 10 0v3|M6.5 11h11A1.5 1.5 0 0 1 19 12.5v6A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-6A1.5 1.5 0 0 1 6.5 11Z'),
+        icon: svgIcon('<circle cx="8" cy="15" r="4.5"/><path d="M11.2 11.8 20.5 2.5"/><path d="M15.5 7l3 3"/>'),
       },
       {
         label: '账号安全',
         path: '/admin/dashboard/account',
-        icon: svgIcon('M20 21a8 8 0 0 0-16 0|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z'),
+        icon: svgIcon('<path d="M12 3 5 5.8v5.4c0 4.6 3 7.6 7 9 4-1.4 7-4.4 7-9V5.8L12 3Z"/><path d="m9.3 11.8 2 2 3.6-3.8"/>'),
       },
     ],
   },
