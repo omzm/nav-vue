@@ -75,11 +75,11 @@
       <div class="lg:hidden">
         <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
           <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-full" />
-          <span class="text-[15px] font-semibold tracking-[-0.01em] text-ink">导航后台</span>
+          <span class="text-[15px] font-medium tracking-[-0.01em] text-ink">导航后台</span>
           <span class="text-[10.5px] text-slate-400">v{{ version }}</span>
           <button
             type="button"
-            class="ml-auto grid h-10 w-10 flex-none place-items-center rounded-full bg-mist text-ink transition-all touch-manipulation active:scale-[0.92]"
+            class="ml-auto grid h-10 w-10 flex-none place-items-center text-ink transition-transform touch-manipulation active:scale-[0.9]"
             aria-label="打开导航菜单"
             @click="drawerOpen = true"
           >

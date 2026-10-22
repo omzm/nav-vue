@@ -22,7 +22,7 @@
         <AppButton v-if="keyword" size="sm" variant="ghost" @click="keyword = ''">清除筛选</AppButton>
         <span v-if="isFiltering" class="text-xs text-slate-400">筛选时暂不支持拖拽排序</span>
         <span class="ml-auto text-xs text-slate-400">
-          共 <strong class="text-slate-700">{{ filteredCategories.length }}</strong> 个分类
+          共 <strong class="font-medium text-slate-700">{{ filteredCategories.length }}</strong> 个分类
         </span>
       </div>
 
@@ -61,7 +61,7 @@
             </p>
           </div>
           <span class="flex-none text-right">
-            <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ linkCount(category.id).total }}</span>
+            <span class="block text-[19px] font-medium leading-[1.15] text-ink tabular-nums">{{ linkCount(category.id).total }}</span>
             <span class="text-[11px] text-slate-400">链接</span>
           </span>
           <div v-if="!isFiltering" class="flex shrink-0 flex-col md:hidden">
@@ -106,8 +106,8 @@
     <Modal :open="!!categoryToDelete" title="删除分类" @close="closeDeleteModal">
       <p>
         <template v-if="deleteLinkCount > 0">
-          该分类下还有 <strong class="text-slate-900">{{ deleteLinkCount }}</strong> 个链接，
-          <strong class="text-red-600">删除分类会同时删除这些链接</strong>。确定继续吗？
+          该分类下还有 <strong class="font-medium text-slate-900">{{ deleteLinkCount }}</strong> 个链接，
+          <strong class="font-medium text-red-600">删除分类会同时删除这些链接</strong>。确定继续吗？
         </template>
         <template v-else>
           确定删除「{{ categoryToDelete?.name }}」吗？

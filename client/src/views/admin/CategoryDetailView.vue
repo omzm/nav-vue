@@ -57,7 +57,7 @@
     <!-- 公开→私密时的级联确认 -->
     <Modal :open="cascade !== null" title="同步设为私密？" @close="closeCascade(false)">
       <p>
-        该分类下还有 <strong class="text-slate-900">{{ cascade?.count ?? 0 }}</strong> 个公开链接，
+        该分类下还有 <strong class="font-medium text-slate-900">{{ cascade?.count ?? 0 }}</strong> 个公开链接，
         是否同步将它们设为私密？（仅设分类私密不会影响链接自身的公开状态）
       </p>
       <template #footer>
