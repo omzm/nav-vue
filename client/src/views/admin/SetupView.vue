@@ -23,10 +23,10 @@
 
       <section
         v-else
-        class="w-full max-w-[420px] rounded-[18px] border border-edgesoft bg-white p-7 shadow-[0_1px_2px_rgba(11,14,19,0.04),0_18px_40px_-28px_rgba(11,14,19,0.22)] sm:p-9"
+        class="w-full max-w-[420px] rounded-[24px] bg-mist p-7 sm:p-9"
       >
         <div class="mb-7">
-          <h1 class="text-2xl font-semibold tracking-tight text-slate-900">初始化管理员</h1>
+          <h1 class="text-2xl font-medium tracking-tight text-slate-900">初始化管理员</h1>
           <p class="mt-2 text-xs leading-5 text-slate-400">
             第一次部署？设置你的管理员邮箱和密码，只需一次。
           </p>

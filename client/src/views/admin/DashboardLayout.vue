@@ -24,15 +24,11 @@
         <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           <div>
             <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)">
-              <template #icon>
-                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M7 14v3m4-7v7m4-10v10m4-14v14" />
-                </svg>
-              </template>
+              <template #icon><component :is="dashboardIcon" /></template>
             </NavItem>
           </div>
           <div v-for="group in navGroups" :key="group.title">
-            <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+            <p class="mb-2 px-3 text-[11.5px] text-slate-500">
               {{ group.title }}
             </p>
             <div class="space-y-0.5">
@@ -50,13 +46,13 @@
         </nav>
         <div class="border-t border-edgesoft p-3">
           <div class="mb-2 flex items-center gap-2.5 px-2 py-1.5">
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-steelsoft text-xs font-semibold text-steeldeep">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-xs font-medium text-white">
               {{ sessionEmailInitial }}
             </span>
-            <span class="min-w-0 flex-1 truncate text-[13px] text-slate-600" :title="sessionEmail">
+            <span class="min-w-0 flex-1 truncate text-[13px] text-slate-700" :title="sessionEmail">
               {{ sessionEmail }}
             </span>
-            <span class="flex-none font-mono text-[10px] text-slate-400">v{{ version }}</span>
+            <span class="flex-none text-[10.5px] text-slate-500">v{{ version }}</span>
           </div>
           <button
             type="button"
@@ -74,12 +70,12 @@
       <!-- 移动端顶栏 -->
       <div class="lg:hidden">
         <header class="sticky top-0 z-40 flex items-center gap-2.5 border-b border-edge bg-page/90 px-4 py-3 backdrop-blur">
-          <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-[30%] shadow-[0_0_0_1px_var(--color-edge),0_3px_10px_-6px_rgba(11,14,19,0.5)]" />
-          <span class="text-[15px] font-bold tracking-[-0.01em] text-ink">导航后台</span>
-          <span class="font-mono text-[10.5px] text-slate-400">v{{ version }}</span>
+          <img src="/icon.svg" alt="" class="h-[30px] w-[30px] flex-none rounded-full" />
+          <span class="text-[15px] font-medium tracking-[-0.01em] text-ink">导航后台</span>
+          <span class="text-[10.5px] text-slate-500">v{{ version }}</span>
           <button
             type="button"
-            class="ml-auto grid h-10 w-10 flex-none place-items-center rounded-[11px] border border-edge bg-white text-ink transition-all touch-manipulation active:scale-[0.93]"
+            class="ml-auto grid h-10 w-10 flex-none place-items-center text-ink transition-transform touch-manipulation active:scale-[0.9]"
             aria-label="打开导航菜单"
             @click="drawerOpen = true"
           >
@@ -106,11 +102,15 @@
                     </button>
                   </div>
                   <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-4" @click="drawerOpen = false">
-                    <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)" />
+                    <NavItem to="/admin/dashboard" label="工作台" :active="isActive('/admin/dashboard', true)">
+                      <template #icon><component :is="dashboardIcon" /></template>
+                    </NavItem>
                     <div v-for="group in navGroups" :key="group.title">
-                      <p class="mb-2 px-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">{{ group.title }}</p>
+                      <p class="mb-2 px-3 text-[11.5px] text-slate-500">{{ group.title }}</p>
                       <div class="space-y-0.5">
-                        <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)" />
+                        <NavItem v-for="item in group.items" :key="item.path" :to="item.path" :label="item.label" :active="isActive(item.path)">
+                          <template #icon><component :is="item.icon" /></template>
+                        </NavItem>
                       </div>
                     </div>
                   </nav>
@@ -136,20 +136,22 @@
       <main class="min-w-0 flex-1">
         <div class="border-b border-edge px-4 py-3 sm:px-6 lg:px-8">
           <div class="mx-auto flex max-w-6xl items-center">
-            <span class="inline-flex items-center gap-2 rounded-full border border-edge bg-white/70 px-3.5 py-[7px] font-mono text-[11px] text-[#7B8797] shadow-[0_14px_30px_-28px_rgba(11,14,19,0.55)]">
-              <span class="relative flex h-1.5 w-1.5">
-                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-steel opacity-60"></span>
-                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-steel"></span>
-              </span>
+            <span class="inline-flex items-center gap-2 rounded-full bg-mist px-3.5 py-[7px] text-xs text-slate-500">
+              <span class="h-[7px] w-[7px] flex-none rounded-full bg-[#22A06B]"></span>
               数据已同步 · 刚刚刷新
             </span>
           </div>
         </div>
         <div class="px-4 py-6 sm:px-6 lg:px-8">
           <div class="mx-auto max-w-6xl">
-            <RouterView />
+            <RouterView v-slot="{ Component }">
+              <Transition name="page" mode="out-in">
+                <component :is="Component" :key="route.path" />
+              </Transition>
+            </RouterView>
           </div>
         </div>
+        <FabActions />
       </main>
     </div>
 
@@ -172,6 +174,7 @@ import { get, post } from '@/api/client'
 import { version } from '../../../package.json'
 import { toast } from '@/composables/useToast'
 import AdminBrand from '@/components/admin/AdminBrand.vue'
+import FabActions from '@/components/admin/FabActions.vue'
 import AppButton from '@/components/admin/AppButton.vue'
 import DbErrorNotice from '@/components/admin/DbErrorNotice.vue'
 import Modal from '@/components/admin/Modal.vue'
@@ -194,23 +197,24 @@ const sessionEmailInitial = computed(() =>
   (sessionEmail.value.trim().charAt(0) || '管').toUpperCase()
 )
 
-function svgIcon(paths: string) {
+function svgIcon(markup: string) {
   return () =>
-    h(
-      'svg',
-      {
-        class: 'h-[18px] w-[18px]',
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: 'currentColor',
-        'stroke-width': 1.9,
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-        'aria-hidden': true,
-      },
-      paths.split('|').map((d) => h('path', { d }))
-    )
+    h('svg', {
+      class: 'h-[18px] w-[18px]',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': 1.9,
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      'aria-hidden': true,
+      innerHTML: markup,
+    })
 }
+
+const dashboardIcon = svgIcon(
+  '<rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/>'
+)
 
 const navGroups = [
   {
@@ -219,12 +223,12 @@ const navGroups = [
       {
         label: '分类管理',
         path: '/admin/dashboard/categories',
-        icon: svgIcon('M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z'),
+        icon: svgIcon('<path d="M3.5 7a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7Z"/>'),
       },
       {
         label: '链接管理',
         path: '/admin/dashboard/links',
-        icon: svgIcon('M10 13a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1|M14 11a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1'),
+        icon: svgIcon('<path d="M10 14a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 10a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"/>'),
       },
     ],
   },
@@ -234,17 +238,17 @@ const navGroups = [
       {
         label: 'AI 设置',
         path: '/admin/dashboard/ai-settings',
-        icon: svgIcon('M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z|M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z'),
+        icon: svgIcon('<path d="M12 3.5 13.8 9l5.5 1.8-5.5 1.8L12 18l-1.8-5.4L4.7 10.8 10.2 9 12 3.5Z"/><path d="M18.6 15.4l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/>'),
       },
       {
         label: '解锁口令',
         path: '/admin/dashboard/unlock-phrase',
-        icon: svgIcon('M7 11V8a5 5 0 0 1 10 0v3|M6.5 11h11A1.5 1.5 0 0 1 19 12.5v6A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-6A1.5 1.5 0 0 1 6.5 11Z'),
+        icon: svgIcon('<circle cx="8" cy="15" r="4.5"/><path d="M11.2 11.8 20.5 2.5"/><path d="M15.5 7l3 3"/>'),
       },
       {
         label: '账号安全',
         path: '/admin/dashboard/account',
-        icon: svgIcon('M20 21a8 8 0 0 0-16 0|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z'),
+        icon: svgIcon('<path d="M12 3 5 5.8v5.4c0 4.6 3 7.6 7 9 4-1.4 7-4.4 7-9V5.8L12 3Z"/><path d="m9.3 11.8 2 2 3.6-3.8"/>'),
       },
     ],
   },
@@ -335,7 +339,7 @@ onMounted(() => {
 
 .drawer-slide-enter-active,
 .drawer-slide-leave-active {
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .drawer-slide-enter-from,
 .drawer-slide-leave-to {
@@ -343,7 +347,31 @@ onMounted(() => {
 }
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.18s ease;
+  transition: opacity 0.26s ease;
+}
+.page-enter-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-active {
+  transition: opacity 0.12s ease;
+}
+.page-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+  .page-enter-from {
+    transform: none;
+  }
 }
 .modal-fade-enter-from,
 .modal-fade-leave-to {

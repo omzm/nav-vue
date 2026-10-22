@@ -13,8 +13,8 @@ const classes = computed(() => {
   const base =
     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-4'
   const tones: Record<string, string> = {
-    default: 'bg-steelsoft text-steeldeep',
-    private: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200',
+    default: 'bg-white text-slate-500',
+    private: 'bg-[#F1EAFE] text-[#6D4FC2]',
     danger: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-200',
   }
   return `${base} ${tones[props.tone]}`

@@ -12,11 +12,11 @@
         <Transition name="modal-pop" appear>
           <div
             v-if="open"
-            class="relative w-full rounded-2xl bg-white shadow-2xl"
+            class="relative w-full rounded-[24px] bg-white shadow-2xl"
             :class="wide ? 'max-w-2xl' : 'max-w-md'"
           >
             <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <h2 class="text-[15px] font-semibold text-slate-900">{{ title }}</h2>
+              <h2 class="text-[15px] font-medium text-slate-900">{{ title }}</h2>
               <button
                 type="button"
                 class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
@@ -67,11 +67,20 @@ function onClose() {
 }
 .modal-pop-enter-active {
   transition:
-    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.18s ease;
+    transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.22s ease;
 }
 .modal-pop-enter-from {
-  transform: translateY(10px) scale(0.98);
+  transform: translateY(12px) scale(0.96);
+  opacity: 0;
+}
+.modal-pop-leave-active {
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease;
+}
+.modal-pop-leave-to {
+  transform: translateY(6px) scale(0.98);
   opacity: 0;
 }
 </style>

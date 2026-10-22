@@ -7,7 +7,7 @@
     <div v-else class="flex flex-col gap-5">
       <PageHeader
         
-        kicker="UNLOCK PHRASE"
+       
         title="解锁口令"
         :subtitle="
           '访客在首页输入该口令后可查看私密收藏。保存后立即生效。' +
@@ -18,7 +18,7 @@
 
       <Card>
         <div class="flex flex-col gap-4">
-          <div class="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+          <div class="flex items-center justify-between rounded-xl bg-white px-4 py-3">
             <span class="text-[13px] text-slate-500">当前口令</span>
             <span class="flex items-center gap-2">
               <span class="font-mono text-sm font-medium text-slate-800">
