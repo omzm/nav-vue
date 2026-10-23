@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import publicRoutes from './routes/public.js'
 import authRoutes from './routes/auth.js'
 import adminRoutes from './routes/admin.js'
+import { robotsTxt, sitemapXml } from './lib/seo.js'
 
 /**
  * Express 应用工厂。
@@ -18,6 +19,10 @@ export function createApp() {
   app.set('trust proxy', 1)
   app.use(express.json({ limit: '1mb' }))
   app.use(cookieParser())
+
+  // SEO 文件按请求域名动态生成（须在 SPA fallback 之前注册）
+  app.get('/robots.txt', robotsTxt)
+  app.get('/sitemap.xml', sitemapXml)
 
   app.use('/api', publicRoutes)
   app.use('/api/auth', authRoutes)
