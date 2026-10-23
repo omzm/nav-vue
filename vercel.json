@@ -1,1 +1,1 @@
-{"$schema":"https://openapi.vercel.sh/vercel.json","buildCommand":"npm run build","outputDirectory":"client/dist","rewrites":[{"destination":"/api/index","source":"/api/:path*"},{"destination":"/index.html","source":"/(.*)"}]}
+{"$schema":"https://openapi.vercel.sh/vercel.json","buildCommand":"npm run build","outputDirectory":"client/dist","rewrites":[{"destination":"/api/index","source":"/robots.txt"},{"destination":"/api/index","source":"/sitemap.xml"},{"destination":"/api/index","source":"/api/:path*"},{"destination":"/index.html","source":"/(.*)"}]}
