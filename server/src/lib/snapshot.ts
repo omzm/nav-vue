@@ -165,13 +165,21 @@ async function loadSnapshot(): Promise<NavSnapshot> {
   }
 }
 
+/** 缓存过期瞬间的并发去重：多个请求共用同一次 DB 加载，避免惊群 */
+let inflight: Promise<NavSnapshot> | null = null;
+
 export async function getSnapshot(): Promise<NavSnapshot> {
   const now = Date.now();
   if (cached && now - cached.at < SNAPSHOT_TTL_MS) {
     return cached.snapshot;
   }
-  const snapshot = await loadSnapshot();
-  cached = { snapshot, at: now };
+  if (!inflight) {
+    inflight = loadSnapshot().finally(() => {
+      inflight = null;
+    });
+  }
+  const snapshot = await inflight;
+  cached = { snapshot, at: Date.now() };
   return snapshot;
 }
 

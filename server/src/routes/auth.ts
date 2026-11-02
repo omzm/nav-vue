@@ -11,12 +11,12 @@ import {
 import {
   ADMIN_EMAIL_KEY,
   getAdminConfigStatus,
-  getDbAdminEmail,
-  getDbAdminUsername,
+  getAdminIdentity,
   hasAuthUserByEmail,
 } from '../lib/adminConfig.js';
 import { env } from '../lib/env.js';
-import { isRateLimited, getClientIp } from '../lib/rateLimit.js';
+import { getClientIp } from '../lib/rateLimit.js';
+import { isRateLimitedDb } from '../lib/rateLimitDb.js';
 
 const router = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,10 +48,17 @@ router.get('/config-status', async (_req, res) => {
   res.json({ status });
 });
 
-/** 指定邮箱的 Auth 用户是否存在（供 setup 页判断恢复场景） */
+/**
+ * 指定邮箱的 Auth 用户是否存在（供 setup 页判断恢复场景）。
+ * 未配置前开放；一旦配置完成即关闭——避免成为未鉴权的邮箱存在性预言机。
+ * 配置后的恢复流程走 POST /setup 自身的"已配置邮箱一致性"校验，不依赖本接口。
+ */
 router.get('/has-auth-user', async (req, res) => {
   const email = String(req.query.email ?? '');
   if (!EMAIL_RE.test(email)) {
+    return res.json({ exists: false });
+  }
+  if ((await getAdminConfigStatus()) === 'configured') {
     return res.json({ exists: false });
   }
   res.json({ exists: await hasAuthUserByEmail(email) });
@@ -159,23 +166,24 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ ok: false, error: '请输入账号和密码' });
     }
 
-    // 防暴力破解：同一 IP 10 分钟内最多尝试 10 次
-    if (isRateLimited(`login:${getClientIp(req)}`, 10, 10 * 60_000)) {
+    // 防暴力破解：DB 级滑动窗口（跨 serverless 实例），同一 IP 10 分钟内最多尝试 10 次
+    if (await isRateLimitedDb(`login:${getClientIp(req)}`, 10, 10 * 60_000)) {
       return res.status(429).json({ ok: false, error: '尝试次数过多，请 10 分钟后再试' });
     }
 
+    // 邮箱 + 用户名一次查出（原来是 2-3 次串行查询）
+    const { email: dbEmail, username: dbUsername } = await getAdminIdentity();
     let email: string | null = null;
     if (EMAIL_RE.test(id)) {
       email = id.toLowerCase();
-    } else {
-      const username = await getDbAdminUsername();
-      if (username && id.toLowerCase() === username.toLowerCase()) {
-        email = (await getDbAdminEmail()).toLowerCase();
-      }
+    } else if (dbUsername && id.toLowerCase() === dbUsername.toLowerCase()) {
+      email = dbEmail.toLowerCase();
     }
 
-    const dbEmail = (await getDbAdminEmail()).toLowerCase();
-    if (!email || !dbEmail || email !== dbEmail) {
+    if (!email || !dbEmail || email.toLowerCase() !== dbEmail.toLowerCase()) {
+      // 时序侧信道缓解：标识符不存在时直接 401 会比"走 Supabase 校验"快得多，
+      // 固定垫一下时延，让攻击者难以用响应时间区分账号是否存在（缓解非根除）
+      await new Promise((resolve) => setTimeout(resolve, 400));
       return res.status(401).json({ ok: false, error: '账号或密码不正确' });
     }
 

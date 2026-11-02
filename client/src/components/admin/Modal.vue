@@ -12,6 +12,8 @@
         <Transition name="modal-pop" appear>
           <div
             v-if="open"
+            ref="panelRef"
+            tabindex="-1"
             class="relative w-full rounded-[24px] bg-white shadow-2xl"
             :class="wide ? 'max-w-2xl' : 'max-w-md'"
           >
@@ -45,15 +47,50 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, onUnmounted, ref, watch } from 'vue'
+
 const props = withDefaults(defineProps<{ open: boolean; title: string; wide?: boolean }>(), {
   wide: false,
 })
 const emit = defineEmits<{ close: [] }>()
 
+const panelRef = ref<HTMLElement | null>(null)
+let lastFocused: HTMLElement | null = null
+
 function onClose() {
   if (!props.open) return
   emit('close')
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') onClose()
+}
+
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      // 记住之前的焦点，关闭时还原；打开后把焦点移到弹窗内
+      lastFocused = document.activeElement as HTMLElement | null
+      document.addEventListener('keydown', onKeydown)
+      nextTick(() => {
+        const focusable = panelRef.value?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        ;(focusable ?? panelRef.value)?.focus()
+      })
+    } else {
+      document.removeEventListener('keydown', onKeydown)
+      lastFocused?.focus?.()
+      lastFocused = null
+    }
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown)
+})
 </script>
 
 <style scoped>

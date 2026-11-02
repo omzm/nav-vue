@@ -17,7 +17,9 @@ function fetchWithTimeout(ms: number): typeof fetch {
 export function createAnonClient(): SupabaseClient {
   return createClient(env.supabaseUrl || 'https://placeholder.supabase.co', env.supabaseAnonKey || 'placeholder-key', {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: fetchWithTimeout(10_000) },
+    // 8s 而非 10s：serverless 函数默认 10s 超时，超时设得比函数还长就永远触发不了，
+    // 请求会先 504。8s 保证异常时走快速降级而不是挂到函数超时
+    global: { fetch: fetchWithTimeout(8_000) },
   });
 }
 
@@ -32,6 +34,7 @@ export function createServiceClient(): SupabaseClient {
   }
   return createClient(env.supabaseUrl, env.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: fetchWithTimeout(20_000) },
+    // 同上：20s 在 serverless 下永远触发不了，8s 保证异常时快速 500 而不是 504
+    global: { fetch: fetchWithTimeout(8_000) },
   });
 }

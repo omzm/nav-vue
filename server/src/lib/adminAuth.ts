@@ -70,6 +70,22 @@ export function verifyAdminToken(token: string | null | undefined): string | nul
   }
 }
 
+/**
+ * 解析 token 的过期时间（秒级时间戳），供滑动续期判断用。
+ * 只做格式解析，不校验签名——调用方须先经 verifyAdminToken 校验。
+ */
+export function getAdminTokenExp(token: string | null | undefined): number | null {
+  try {
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 4 || parts[0] !== 'v1') return null;
+    const exp = Number(parts[2]);
+    return Number.isFinite(exp) ? exp : null;
+  } catch {
+    return null;
+  }
+}
+
 export function adminCookieOptions() {
   return {
     httpOnly: true,

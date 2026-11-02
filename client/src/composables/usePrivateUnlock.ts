@@ -156,7 +156,9 @@ export function usePrivateUnlock() {
         .catch(() => {});
       return;
     }
-    if (clean.length >= 1) {
+    // 投机预取只在 >= 2 字符时触发（与 handleUnlock 的解锁阈值对齐）：
+    // 单字符输入不打服务端，缓解快速输入时的请求风暴
+    if (clean.length >= 2) {
       prefetchPrivate(clean);
     }
     if (prefetchTimer !== null) {

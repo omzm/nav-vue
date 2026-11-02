@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { get, post } from '@/api/client'
 import { apiErrorMessage, toast } from '@/composables/useToast'
@@ -92,7 +92,8 @@ const identifier = ref('')
 const password = ref('')
 const loading = ref(false)
 const dbError = ref(false)
-const authError = ref(route.query.error === 'auth')
+// computed 而非 ref：query 变化时同步（之前只在 setup 时读一次）
+const authError = computed(() => route.query.error === 'auth')
 
 async function checkStatus() {
   dbError.value = false

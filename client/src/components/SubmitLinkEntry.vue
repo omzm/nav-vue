@@ -145,6 +145,9 @@ async function handleSubmit() {
     if (result.ok) {
       if (!verified.value && activePassword) {
         try {
+          // 注意：提交密码明文存 sessionStorage（同标签页、关闭即清）。
+          // 这是刻意的设计（免重复输入），但 XSS 拿到即得密码——
+          // 前端已有 sanitizeSvgCode 等 XSS 防护，后续如有富文本入口需重新评估。
           sessionStorage.setItem(STORAGE_KEY, activePassword);
         } catch {
           // 忽略存储失败

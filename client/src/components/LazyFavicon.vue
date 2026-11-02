@@ -19,6 +19,7 @@ const shouldLoad = ref(false);
 const useFallback = ref(false);
 const imgError = ref(false);
 let observer: IntersectionObserver | null = null;
+let fallbackTimer: number | undefined;
 
 // URL 变化时重置失败状态：避免旧地址的失败记忆污染新地址
 watch(
@@ -34,8 +35,10 @@ onMounted(() => {
   if (!node) return;
 
   if (!('IntersectionObserver' in window)) {
-    // 不支持 IntersectionObserver 的环境：直接加载
-    setTimeout(() => {
+    // 不支持 IntersectionObserver 的环境：直接加载（记下 timer，卸载时清理）
+    // 注意：此处不能用 window.setTimeout——'IntersectionObserver' in window 的
+    // 否定分支会把 window 收窄成 never，用全局 setTimeout 即可
+    fallbackTimer = setTimeout(() => {
       shouldLoad.value = true;
     }, 0);
     return;
@@ -61,6 +64,10 @@ onMounted(() => {
 onUnmounted(() => {
   observer?.disconnect();
   observer = null;
+  if (fallbackTimer !== undefined) {
+    clearTimeout(fallbackTimer);
+    fallbackTimer = undefined;
+  }
 });
 
 const faviconUrl = computed(() => {

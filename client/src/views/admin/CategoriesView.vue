@@ -130,7 +130,7 @@ import {
   loadAdminData,
   refreshSnapshot,
   useAdminData,
-  type AdminCategory,
+  type AdminCategoryRow,
 } from '@/composables/useAdminData'
 import { apiErrorMessage, toast } from '@/composables/useToast'
 import AppButton from '@/components/admin/AppButton.vue'
@@ -149,7 +149,7 @@ const PAGE_SIZE = 12
 const keyword = ref('')
 const page = ref(1)
 const deletingId = ref('')
-const categoryToDelete = ref<AdminCategory | null>(null)
+const categoryToDelete = ref<AdminCategoryRow | null>(null)
 const dragSourceId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
 

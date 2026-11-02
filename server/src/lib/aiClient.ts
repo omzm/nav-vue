@@ -87,7 +87,12 @@ export async function callChatCompletions(userPrompt: string, maxTokens = 200): 
   return text;
 }
 
-function assertPublicHttpUrl(apiBase: string): void {
+/**
+ * SSRF 防护：只允许公网 http(s) 地址，拒绝本地/内网字面量。
+ * 注意：fetch 会跟随 302 跳转，公网 URL 跳转到内网仍可绕过——
+ * 该检查防的是直接填内网地址的误配/内鬼场景，非完整 SSRF 沙箱。
+ */
+export function assertPublicHttpUrl(apiBase: string): void {
   let url: URL;
   try {
     url = new URL(apiBase);

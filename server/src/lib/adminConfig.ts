@@ -56,6 +56,27 @@ export async function getDbAdminUsername(): Promise<string> {
   }
 }
 
+/**
+ * 一次查出管理员邮箱 + 用户名（登录流程用，避免 2-3 次串行 DB 查询）。
+ * 读不到时返回空字符串（调用方 fail-closed）。
+ */
+export async function getAdminIdentity(): Promise<{ email: string; username: string }> {
+  try {
+    const { data, error } = await createServiceClient()
+      .from('app_config')
+      .select('key, value')
+      .in('key', [ADMIN_EMAIL_KEY, ADMIN_USERNAME_KEY]);
+    if (error || !data) return { email: '', username: '' };
+    const map = new Map<string, string>();
+    for (const row of data as Array<{ key?: string; value?: string }>) {
+      if (row.key) map.set(row.key, (row.value || '').trim());
+    }
+    return { email: map.get(ADMIN_EMAIL_KEY) || '', username: map.get(ADMIN_USERNAME_KEY) || '' };
+  } catch {
+    return { email: '', username: '' };
+  }
+}
+
 /** 写管理员登录用户名；传空字符串表示清除（只用邮箱登录） */
 export async function setDbAdminUsername(username: string): Promise<void> {
   const { error } = await createServiceClient()

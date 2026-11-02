@@ -52,9 +52,20 @@ async function loadSubmitConfig() {
   }
 }
 
+// 壁纸是 CSS background，无 load 事件：预加载完成后淡入，避免生硬闪现
+const wallpaperLoaded = ref(false);
+
 onMounted(() => {
   void loadSnapshot();
   void loadSubmitConfig();
+  const preload = new Image();
+  preload.onload = () => {
+    wallpaperLoaded.value = true;
+  };
+  preload.onerror = () => {
+    wallpaperLoaded.value = true; // 失败也显示渐变底，不一直透明
+  };
+  preload.src = '/api/bing-wallpaper';
 });
 
 const { canRefresh, isRefreshButtonBusy, handleRefresh } = useAdminRefresh(loadSnapshot);
@@ -175,7 +186,8 @@ const currentYear = new Date().getFullYear();
 
       <header ref="headerRef" class="relative overflow-hidden border-b border-gray-200 dark:border-gray-700/50 shadow-sm">
         <div
-          class="absolute inset-0 bg-cover bg-center bg-gradient-to-br from-blue-400 to-indigo-600"
+          class="absolute inset-0 bg-cover bg-center bg-gradient-to-br from-blue-400 to-indigo-600 transition-opacity duration-700"
+          :class="wallpaperLoaded ? 'opacity-100' : 'opacity-0'"
           style="background-image: url('/api/bing-wallpaper')"
         />
 

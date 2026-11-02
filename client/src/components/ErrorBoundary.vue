@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { onErrorCaptured, ref } from 'vue';
+import { onErrorCaptured, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 const error = ref<Error | null>(null);
+const route = useRoute();
 
 onErrorCaptured((err) => {
   console.error('ErrorBoundary caught:', err);
@@ -9,6 +11,15 @@ onErrorCaptured((err) => {
   // 返回 false 阻止错误继续向上传播
   return false;
 });
+
+// 路由变化即重置错误态：子路由渲染出错后，跳到正常路由可恢复，
+// 不用整页刷新（之前 error 一旦置 true 就卡死整站）
+watch(
+  () => route.fullPath,
+  () => {
+    error.value = null;
+  }
+);
 
 function reload() {
   window.location.reload();

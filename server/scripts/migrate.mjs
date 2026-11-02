@@ -34,7 +34,8 @@ async function main() {
 
   const client = new pg.Client({
     connectionString: databaseUrl,
-    ssl: { rejectUnauthorized: false },
+    // Supabase 用公共 CA 签发证书，开启校验防迁移链路被中间人劫持
+    ssl: { rejectUnauthorized: true },
   });
 
   // 只允许 production 执行：MIGRATE_ENV=preview/staging 时一律跳过，避免非生产构建改动生产库；

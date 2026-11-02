@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { post, put } from '@/api/client'
 import { loadAdminData, refreshSnapshot, useAdminData } from '@/composables/useAdminData'
@@ -166,6 +166,14 @@ async function handleSubmit() {
     saving.value = false
   }
 }
+
+onUnmounted(() => {
+  // 确认弹窗开着时切走路由：按"取消"结算 promise，避免 handleSubmit 的 await 永远挂起
+  if (cascade.value) {
+    cascade.value.resolve(false)
+    cascade.value = null
+  }
+})
 
 onMounted(async () => {
   await loadAdminData()

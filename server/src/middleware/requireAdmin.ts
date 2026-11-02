@@ -1,5 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
-import { ADMIN_COOKIE_NAME, LOCAL_ADMIN_EMAIL, verifyAdminToken } from '../lib/adminAuth.js';
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_SESSION_TTL_SECONDS,
+  LOCAL_ADMIN_EMAIL,
+  adminCookieOptions,
+  getAdminTokenExp,
+  signAdminToken,
+  verifyAdminToken,
+} from '../lib/adminAuth.js';
 import { getDbAdminEmail } from '../lib/adminConfig.js';
 import { env } from '../lib/env.js';
 
@@ -29,6 +37,16 @@ export async function requireAdmin(req: AdminRequest, res: Response, next: NextF
     const dbEmail = await getDbAdminEmail();
     if (!dbEmail || email.toLowerCase() !== dbEmail.toLowerCase()) {
       return res.status(401).json({ error: '未授权：需要管理员登录' });
+    }
+
+    // 滑动续期：会话剩余有效期不足一半时重签，活跃管理员不会被 7 天硬过期踢掉线
+    const exp = getAdminTokenExp(req.cookies?.[ADMIN_COOKIE_NAME]);
+    if (exp && exp * 1000 - Date.now() < (ADMIN_SESSION_TTL_SECONDS * 1000) / 2) {
+      try {
+        res.cookie(ADMIN_COOKIE_NAME, signAdminToken(email), adminCookieOptions());
+      } catch {
+        // 续期失败不影响本次请求
+      }
     }
 
     req.adminEmail = email;

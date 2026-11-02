@@ -18,6 +18,38 @@ function getFallbackQuote(): string {
   return FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
 }
 
+/** 有界读取文本：第三方接口返回超大 body 时直接掐断，不让它拖垮服务端 */
+async function readTextBounded(response: Response, maxBytes = 8192): Promise<string> {
+  const declared = Number(response.headers.get('content-length') || 0);
+  if (declared > maxBytes) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error('Quote response too large');
+  }
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return (await response.text()).slice(0, maxBytes);
+  }
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new Error('Quote response too large');
+    }
+    chunks.push(value);
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
+}
+
 async function loadQuote(): Promise<string> {
   const response = await fetch('https://v.api.aa1.cn/api/yiyan/index.php', {
     signal: AbortSignal.timeout(3000),
@@ -25,7 +57,7 @@ async function loadQuote(): Promise<string> {
   if (!response.ok) {
     throw new Error(`Quote request failed: ${response.status}`);
   }
-  const text = await response.text();
+  const text = await readTextBounded(response);
   const quote = text.replace(/<[^>]*>/g, '').trim();
   return quote || getFallbackQuote();
 }

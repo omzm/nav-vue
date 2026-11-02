@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { createAnonClient, createServiceClient } from '../lib/supabase.js';
 import { requireAdmin, type AdminRequest } from '../middleware/requireAdmin.js';
 import { invalidateSnapshot } from '../lib/snapshot.js';
-import { readAiCredentials, callChatCompletions, AI_API_BASE_KEY, AI_API_KEY_KEY, AI_MODEL_KEY } from '../lib/aiClient.js';
+import { readAiCredentials, callChatCompletions, assertPublicHttpUrl, AI_API_BASE_KEY, AI_API_KEY_KEY, AI_MODEL_KEY } from '../lib/aiClient.js';
 import {
   ADMIN_COOKIE_NAME,
   adminCookieOptions,
@@ -52,8 +52,8 @@ router.get('/data', async (_req, res) => {
 /* ---------------- 分类 CRUD ---------------- */
 
 router.post('/categories', async (req, res) => {
-  const name = String(req.body?.name ?? '').trim();
-  const icon = String(req.body?.icon ?? '').trim();
+  const name = String(req.body?.name ?? '').trim().slice(0, 100);
+  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000);
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
   if (!name) return res.status(400).json({ error: '分类名称不能为空' });
@@ -77,8 +77,8 @@ router.put('/categories/:id', async (req, res) => {
   if (!UUID_RE.test(id)) {
     return res.status(400).json({ ok: false, error: '无效的分类 ID' });
   }
-  const name = String(req.body?.name ?? '').trim();
-  const icon = String(req.body?.icon ?? '').trim();
+  const name = String(req.body?.name ?? '').trim().slice(0, 100);
+  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000);
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
   /** 分类改公开→私密时，是否把名下公开链接同步为私密 */
@@ -152,10 +152,10 @@ router.get('/links/check-duplicate', async (req, res) => {
 
 router.post('/links', async (req, res) => {
   const category_id = String(req.body?.category_id ?? '').trim();
-  const title = String(req.body?.title ?? '').trim();
+  const title = String(req.body?.title ?? '').trim().slice(0, 100);
   const rawUrl = String(req.body?.url ?? '').trim();
-  const description = String(req.body?.description ?? '').trim();
-  const icon = String(req.body?.icon ?? '').trim() || null;
+  const description = String(req.body?.description ?? '').trim().slice(0, 500);
+  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000) || null;
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
   if (!category_id) return res.status(400).json({ error: '请选择分类' });
@@ -186,10 +186,10 @@ router.put('/links/:id', async (req, res) => {
     return res.status(400).json({ ok: false, error: '无效的链接 ID' });
   }
   const category_id = String(req.body?.category_id ?? '').trim();
-  const title = String(req.body?.title ?? '').trim();
+  const title = String(req.body?.title ?? '').trim().slice(0, 100);
   const rawUrl = String(req.body?.url ?? '').trim();
-  const description = String(req.body?.description ?? '').trim();
-  const icon = String(req.body?.icon ?? '').trim() || null;
+  const description = String(req.body?.description ?? '').trim().slice(0, 500);
+  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000) || null;
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
   if (!category_id) return res.status(400).json({ error: '请选择分类' });
@@ -405,6 +405,11 @@ router.put('/ai-config', async (req, res) => {
   const apiKey = String(req.body?.apiKey ?? '').trim();
   if (!apiBase) return res.status(400).json({ error: '请填写 API 地址' });
   if (!/^https?:\/\//i.test(apiBase)) return res.status(400).json({ error: 'API 地址须以 http:// 或 https:// 开头' });
+  try {
+    assertPublicHttpUrl(apiBase);
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'API 地址不正确' });
+  }
   if (!model) return res.status(400).json({ error: '请选择模型' });
   try {
     const now = new Date().toISOString();
@@ -440,6 +445,11 @@ router.post('/ai-models', async (req, res) => {
     const apiKey = String(req.body?.apiKey ?? '').trim() || stored.apiKey;
     if (!apiBase) return res.status(400).json({ error: '请先填写 API 地址' });
     if (!/^https?:\/\//i.test(apiBase)) return res.status(400).json({ error: 'API 地址须以 http:// 或 https:// 开头' });
+    try {
+      assertPublicHttpUrl(apiBase);
+    } catch (error) {
+      return res.status(400).json({ error: error instanceof Error ? error.message : 'API 地址不正确' });
+    }
     if (!apiKey) return res.status(400).json({ error: '请先填写 API Key' });
 
     let response: Response;

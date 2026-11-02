@@ -3,6 +3,7 @@ import { createAnonClient, createServiceClient } from '../lib/supabase.js';
 import { getSnapshot, invalidateSnapshot } from '../lib/snapshot.js';
 import { getDailyQuote } from '../lib/dailyQuote.js';
 import { isRateLimited, getClientIp } from '../lib/rateLimit.js';
+import { isRateLimitedDb } from '../lib/rateLimitDb.js';
 import { timingSafeEqualStr } from '../lib/adminAuth.js';
 import { env } from '../lib/env.js';
 import { normalizeUrl } from '../lib/url.js';
@@ -11,10 +12,11 @@ import type { NavCategory } from '../types.js';
 const router = Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** 首页公开快照（只含公开数据） */
+/** 首页公开快照（只含公开数据，无用户相关内容，可安全走边缘缓存） */
 router.get('/snapshot', async (_req, res) => {
   try {
     const snapshot = await getSnapshot();
+    res.set('Cache-Control', 'public, s-maxage=45, stale-while-revalidate=300');
     res.json(snapshot);
   } catch (error) {
     console.error('GET /api/snapshot failed:', error);
@@ -28,6 +30,10 @@ router.get('/snapshot', async (_req, res) => {
  * 真正的校验发生在数据库函数 get_nav_private_data 内。
  */
 router.post('/unlock', async (req, res) => {
+  // 搜索框投机解锁每敲一键就打一次：限流防请求风暴（暗号门本就是弱校验，限流只防刷不防"开门"）
+  if (isRateLimited(`unlock:${getClientIp(req)}`, 60, 60_000)) {
+    return res.status(429).json({ ok: false, categories: [], reason: 'error' });
+  }
   const phrase = String(req.body?.phrase ?? '').trim();
   if (!phrase || phrase.length > 32) {
     return res.json({ ok: false, categories: [], reason: 'mismatch' });
@@ -83,6 +89,10 @@ router.post('/submit', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'not_configured' });
   }
   if (!isPasswordValid(String(req.body?.password ?? ''), expectedPassword)) {
+    // 防暴力破解：DB 级滑动窗口（跨 serverless 实例），同一 IP 10 分钟 10 次
+    if (await isRateLimitedDb(`submit-pw:${getClientIp(req)}`, 10, 10 * 60_000)) {
+      return res.status(429).json({ ok: false, error: 'rate_limited' });
+    }
     return res.status(403).json({ ok: false, error: 'wrong_password' });
   }
 
@@ -109,65 +119,72 @@ router.post('/submit', async (req, res) => {
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 
-  const { data: category, error: categoryError } = await supabase
-    .from('categories')
-    .select('id, is_private')
-    .eq('id', categoryId)
-    .maybeSingle();
-  if (categoryError || !category) {
-    return res.status(400).json({ ok: false, error: 'invalid_category' });
-  }
+  try {
+    const { data: category, error: categoryError } = await supabase
+      .from('categories')
+      .select('id, is_private')
+      .eq('id', categoryId)
+      .maybeSingle();
+    if (categoryError || !category) {
+      return res.status(400).json({ ok: false, error: 'invalid_category' });
+    }
 
-  const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
-  const { count: recentCount, error: countError } = await supabase
-    .from('links')
-    .select('id', { count: 'exact', head: true })
-    .eq('source', 'public')
-    .gte('created_at', oneHourAgo);
-  if (countError) {
-    console.error('提交收录：频率检查失败', countError);
+    const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
+    const { count: recentCount, error: countError } = await supabase
+      .from('links')
+      .select('id', { count: 'exact', head: true })
+      .eq('source', 'public')
+      .gte('created_at', oneHourAgo);
+    if (countError) {
+      console.error('提交收录：频率检查失败', countError);
+      return res.status(500).json({ ok: false, error: 'server_error' });
+    }
+    if ((recentCount || 0) >= MAX_SUBMITS_PER_HOUR) {
+      return res.status(429).json({ ok: false, error: 'rate_limited' });
+    }
+
+    const normalized = normalizeUrl(rawUrl);
+    const { data: existing, error: dupError } = await supabase.from('links').select('id').eq('url', normalized).limit(1);
+    if (dupError) {
+      console.error('提交收录：去重检查失败', dupError);
+      return res.status(500).json({ ok: false, error: 'server_error' });
+    }
+    if ((existing || []).length > 0) {
+      return res.status(409).json({ ok: false, error: 'duplicate' });
+    }
+
+    const { count: categoryCount, error: orderError } = await supabase
+      .from('links')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', categoryId);
+    if (orderError) {
+      console.error('提交收录：排序值查询失败', orderError);
+      return res.status(500).json({ ok: false, error: 'server_error' });
+    }
+
+    const { error: insertError } = await supabase.from('links').insert({
+      category_id: categoryId,
+      title,
+      url: normalized,
+      description,
+      icon: '',
+      order: (categoryCount || 0) + 1,
+      is_private: Boolean(category.is_private),
+      source: 'public',
+    });
+    if (insertError) {
+      console.error('提交收录：写入失败', insertError);
+      return res.status(500).json({ ok: false, error: 'server_error' });
+    }
+
+    invalidateSnapshot();
+    return res.json({ ok: true });
+  } catch (error) {
+    // Supabase 网络抖动等异常：Express 4 不接管 async handler 的 rejected promise，
+    // 这里兜底 500，避免请求挂起无响应
+    console.error('提交收录：处理失败', error);
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
-  if ((recentCount || 0) >= MAX_SUBMITS_PER_HOUR) {
-    return res.status(429).json({ ok: false, error: 'rate_limited' });
-  }
-
-  const normalized = normalizeUrl(rawUrl);
-  const { data: existing, error: dupError } = await supabase.from('links').select('id').eq('url', normalized).limit(1);
-  if (dupError) {
-    console.error('提交收录：去重检查失败', dupError);
-    return res.status(500).json({ ok: false, error: 'server_error' });
-  }
-  if ((existing || []).length > 0) {
-    return res.status(409).json({ ok: false, error: 'duplicate' });
-  }
-
-  const { count: categoryCount, error: orderError } = await supabase
-    .from('links')
-    .select('id', { count: 'exact', head: true })
-    .eq('category_id', categoryId);
-  if (orderError) {
-    console.error('提交收录：排序值查询失败', orderError);
-    return res.status(500).json({ ok: false, error: 'server_error' });
-  }
-
-  const { error: insertError } = await supabase.from('links').insert({
-    category_id: categoryId,
-    title,
-    url: normalized,
-    description,
-    icon: '',
-    order: (categoryCount || 0) + 1,
-    is_private: Boolean(category.is_private),
-    source: 'public',
-  });
-  if (insertError) {
-    console.error('提交收录：写入失败', insertError);
-    return res.status(500).json({ ok: false, error: 'server_error' });
-  }
-
-  invalidateSnapshot();
-  return res.json({ ok: true });
 });
 
 /** 每日一言：首页客户端挂载后异步拉取，不阻塞首屏 */

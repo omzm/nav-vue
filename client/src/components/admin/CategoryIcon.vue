@@ -1,21 +1,22 @@
-<template>
-  <span v-if="safeSvg" class="inline-flex items-center justify-center [&>svg]:h-full [&>svg]:w-full" aria-hidden="true" v-html="safeSvg" />
-  <IconFont v-else-if="isBuiltin" :name="value" />
-  <span v-else-if="value" class="inline-flex items-center justify-center leading-none">{{ value }}</span>
-  <IconFont v-else name="icon-folder" />
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue'
+import BaseCategoryIcon from '@/components/CategoryIcon.vue'
 import IconFont from './IconFont.vue'
-import { sanitizeSvgCode } from '@/utils/icons'
 
 const props = defineProps<{ icon?: string | null }>()
 
 const value = computed(() => (props.icon ?? '').trim())
-const safeSvg = computed(() => (value.value ? sanitizeSvgCode(value.value) : ''))
-const isBuiltin = computed(() => {
-  const v = value.value
-  return v.startsWith('icon-') || v.includes(' icon-') || v.startsWith('iconfont ')
-})
 </script>
+
+<template>
+  <!--
+    图标渲染逻辑（SVG 清洗 / iconfont / emoji 回退）已收敛到 @/components/CategoryIcon.vue，
+    这里只保留后台特有的空图标兜底（默认文件夹图标）与后台样式。
+  -->
+  <IconFont v-if="!value" name="icon-folder" />
+  <BaseCategoryIcon
+    v-else
+    :icon="value"
+    className="inline-flex items-center justify-center leading-none [&>svg]:h-full [&>svg]:w-full"
+  />
+</template>

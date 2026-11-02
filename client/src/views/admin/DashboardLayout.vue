@@ -168,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { get, post } from '@/api/client'
 import { version } from '../../../package.json'
@@ -307,22 +307,37 @@ async function handleLogout() {
     loggingOut.value = false
     showLogoutConfirm.value = false
     drawerOpen.value = false
+    // 登出清掉管理员 hint 缓存，避免非管理员短暂看到刷新按钮
+    try {
+      sessionStorage.removeItem('nav_admin_hint')
+    } catch {
+      // 忽略
+    }
     toast.success('已退出登录')
     await router.replace('/admin')
   }
 }
 
+let progressTimer: number | undefined
+
 onMounted(() => {
   void checkAuth()
-  router.beforeEach((_to, _from, next) => {
+  // 全局守卫返回注销函数：布局卸载时注销，避免退出重登后重复注册累积
+  const stopBefore = router.beforeEach((_to, _from, next) => {
     navigating.value = true
     next()
   })
-  router.afterEach(() => {
+  const stopAfter = router.afterEach(() => {
     // 让进度条至少闪一下，避免过快跳转看不到
-    window.setTimeout(() => {
+    window.clearTimeout(progressTimer)
+    progressTimer = window.setTimeout(() => {
       navigating.value = false
     }, 250)
+  })
+  onUnmounted(() => {
+    stopBefore()
+    stopAfter()
+    window.clearTimeout(progressTimer)
   })
 })
 </script>

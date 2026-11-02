@@ -317,7 +317,7 @@ import {
   loadAdminData,
   refreshSnapshot,
   useAdminData,
-  type AdminLink,
+  type AdminLinkRow,
 } from '@/composables/useAdminData'
 import { apiErrorMessage, toast } from '@/composables/useToast'
 import { getHostname as hostname } from '@/utils/icons'
@@ -348,7 +348,7 @@ const visibilityChips = [
 ]
 const page = ref(1)
 const selectedIds = reactive(new Set<string>())
-const linkToDelete = ref<AdminLink | null>(null)
+const linkToDelete = ref<AdminLinkRow | null>(null)
 const deletingId = ref('')
 const showBatchDelete = ref(false)
 const batchBusy = ref(false)

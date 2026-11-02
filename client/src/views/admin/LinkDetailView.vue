@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { get, post, put } from '@/api/client'
 import { loadAdminData, refreshSnapshot, useAdminData } from '@/composables/useAdminData'
@@ -413,14 +413,22 @@ onUnmounted(() => {
   if (iconFetchTimer) clearTimeout(iconFetchTimer)
 })
 
+// 新建页 ?category= 预设：路由按 path 做 key，query 变化不 remount，用 watch 跟进
+function applyCategoryPreset() {
+  if (isEdit.value) return
+  const preset = route.query.category
+  if (typeof preset === 'string' && preset && categories.value.some((c) => c.id === preset)) {
+    handleCategoryChange(preset)
+  }
+}
+
+watch(() => route.query.category, applyCategoryPreset)
+
 onMounted(async () => {
   await loadAdminData()
   // 新建：URL 带有 ?category= 预设分类时自动选中
   if (!isEdit.value) {
-    const preset = route.query.category
-    if (typeof preset === 'string' && preset && categories.value.some((c) => c.id === preset)) {
-      handleCategoryChange(preset)
-    }
+    applyCategoryPreset()
     return
   }
   // 编辑：从共享数据里取当前链接

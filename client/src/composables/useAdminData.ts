@@ -3,7 +3,7 @@ import { get, post } from '@/api/client'
 import { toast } from './useToast'
 
 /** 后端返回的数据库行（snake_case），对应 supabase schema */
-export interface AdminCategory {
+export interface AdminCategoryRow {
   id: string
   name: string
   icon: string
@@ -12,7 +12,7 @@ export interface AdminCategory {
   created_at: string
 }
 
-export interface AdminLink {
+export interface AdminLinkRow {
   id: string
   category_id: string
   title: string
@@ -26,24 +26,31 @@ export interface AdminLink {
 
 /** 模块级共享状态：所有后台页面共用同一份数据，避免重复请求 */
 const state = reactive({
-  categories: [] as AdminCategory[],
-  links: [] as AdminLink[],
+  categories: [] as AdminCategoryRow[],
+  links: [] as AdminLinkRow[],
   loading: true,
   refreshing: false,
   loadedOnce: false,
 })
 
 let inflight: Promise<void> | null = null
+let pendingForceReload = false
 
 async function fetchData(): Promise<void> {
-  const data = await get<{ categories: AdminCategory[]; links: AdminLink[] }>('/admin/data')
+  const data = await get<{ categories: AdminCategoryRow[]; links: AdminLinkRow[] }>('/admin/data')
   state.categories = data.categories ?? []
   state.links = data.links ?? []
 }
 
 export async function loadAdminData(force = false, opts?: { silent?: boolean }): Promise<void> {
   if (inflight) {
+    // 强制刷新不被静默吞掉：等当前请求结束后补一次（多次 force 合并为一次）
+    if (force) pendingForceReload = true
     await inflight
+    if (pendingForceReload) {
+      pendingForceReload = false
+      return loadAdminData(true, opts)
+    }
     return
   }
   if (force) state.refreshing = true
@@ -81,7 +88,7 @@ const privateCategoryIds = computed(
 )
 
 /** 链接是否有效私密：自身私密 或 所在分类私密 */
-export function isLinkPrivate(link: AdminLink): boolean {
+export function isLinkPrivate(link: AdminLinkRow): boolean {
   return link.is_private || privateCategoryIds.value.has(link.category_id)
 }
 

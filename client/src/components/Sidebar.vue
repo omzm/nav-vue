@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onUnmounted, watch } from 'vue';
 import type { HotLink, NavCategory } from '@/types';
 import CategoryIcon from './CategoryIcon.vue';
 import LazyFavicon from './LazyFavicon.vue';
 import SubmitLinkEntry, { type SubmitCategory } from './SubmitLinkEntry.vue';
+import UptimeText from './UptimeText.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -22,8 +23,7 @@ const emit = defineEmits<{
   (e: 'toggle'): void;
 }>();
 
-// 建站日期：如需调整"已稳定运行"的起始时间，改这里即可
-const START_DATE = new Date('2026-02-16T00:00:00+08:00');
+// 运行计时已抽到 UptimeText.vue（独立组件，避免整栏每秒重渲染）
 const ALL_CATEGORIES_ICON = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M3 10.75L12 3l9 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M5.5 9.75V20h13V9.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -58,32 +58,6 @@ const submitCategories = computed<SubmitCategory[]>(() =>
   }))
 );
 
-// ---- 运行计时 ----
-const now = ref<number | null>(null);
-let timer: number | undefined;
-
-onMounted(() => {
-  now.value = Math.floor(Date.now() / 1000) * 1000;
-  timer = window.setInterval(() => {
-    now.value = Math.floor(Date.now() / 1000) * 1000;
-  }, 1000);
-});
-
-onUnmounted(() => {
-  if (timer !== undefined) {
-    window.clearInterval(timer);
-  }
-});
-
-const runTimeText = computed(() => {
-  if (now.value === null) return '已稳定运行 -- 天 -- 时 -- 分 -- 秒';
-  const diff = Math.max(0, now.value - START_DATE.getTime());
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor(diff / 3600000) % 24;
-  const minutes = Math.floor(diff / 60000) % 60;
-  const seconds = Math.floor(diff / 1000) % 60;
-  return `已稳定运行 ${days} 天 ${hours} 时 ${minutes} 分 ${seconds} 秒`;
-});
 </script>
 
 <template>
@@ -197,7 +171,7 @@ const runTimeText = computed(() => {
       />
       <div class="text-xs text-gray-500 dark:text-gray-400 text-center">
         <div class="flex items-center justify-center gap-1 tabular-nums">
-          <span>{{ runTimeText }}</span>
+          <UptimeText />
         </div>
       </div>
       <div class="text-xs text-gray-400 dark:text-gray-500 text-center">
