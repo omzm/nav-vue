@@ -572,15 +572,16 @@ async function verifyAdminIdentity(req: AdminRequest, currentPassword: string): 
   return { ok: true, userId: data.user.id, dbEmail };
 }
 
-/** 修改管理员登录邮箱 / 密码 */
-router.put('/account', async (req: AdminRequest, res) => {
+/** 一次改完：用户名 / 邮箱 / 密码（只改动与当前不同的项），身份只校验一次 */
+router.put('/account/profile', async (req: AdminRequest, res) => {
   try {
+    const username = String(req.body?.username ?? '').trim();
     const cleanEmail = String(req.body?.newEmail ?? '').trim().toLowerCase();
     const cleanPassword = String(req.body?.newPassword ?? '');
     const currentPassword = String(req.body?.currentPassword ?? '');
 
-    if (!cleanEmail && !cleanPassword) {
-      return res.status(400).json({ ok: false, error: '没有要修改的内容' });
+    if (username && !USERNAME_RE.test(username)) {
+      return res.status(400).json({ ok: false, error: '用户名为 2–32 位，可用字母、数字、下划线、连字符、中文' });
     }
     if (cleanEmail && !EMAIL_RE.test(cleanEmail)) {
       return res.status(400).json({ ok: false, error: '新邮箱格式不正确' });
@@ -592,14 +593,22 @@ router.put('/account', async (req: AdminRequest, res) => {
     const identity = await verifyAdminIdentity(req, currentPassword);
     if (!identity.ok) return res.status(401).json({ ok: false, error: identity.error });
     const { userId, dbEmail } = identity as { userId: string; dbEmail: string };
+    const dbUsername = await getDbAdminUsername();
 
-    if (cleanEmail && cleanEmail === dbEmail) {
-      return res.status(400).json({ ok: false, error: '新邮箱与当前邮箱相同，无需修改' });
+    const wantUsername = username !== dbUsername;
+    const wantEmail = !!cleanEmail && cleanEmail !== dbEmail;
+    const wantPassword = !!cleanPassword;
+    if (!wantUsername && !wantEmail && !wantPassword) {
+      return res.status(400).json({ ok: false, error: '没有要修改的内容' });
     }
 
     const svc = createServiceClient();
 
-    if (cleanEmail) {
+    if (wantUsername) {
+      await setDbAdminUsername(username); // 留空即清除，恢复为仅邮箱登录
+    }
+
+    if (wantEmail) {
       const { error: emailError } = await svc.auth.admin.updateUserById(userId, {
         email: cleanEmail,
         email_confirm: true,
@@ -617,34 +626,21 @@ router.put('/account', async (req: AdminRequest, res) => {
       res.cookie(ADMIN_COOKIE_NAME, signAdminToken(cleanEmail), adminCookieOptions());
     }
 
-    if (cleanPassword) {
+    if (wantPassword) {
       const { error: pwError } = await svc.auth.admin.updateUserById(userId, { password: cleanPassword });
       if (pwError) {
         return res.status(500).json({ ok: false, error: '密码修改失败：' + pwError.message });
       }
     }
 
-    res.json({ ok: true, emailChanged: !!cleanEmail });
+    const changed: string[] = [];
+    if (wantUsername) changed.push(username ? '用户名' : '用户名（已清除）');
+    if (wantEmail) changed.push('邮箱');
+    if (wantPassword) changed.push('密码');
+    res.json({ ok: true, emailChanged: wantEmail, changed });
   } catch (error) {
-    console.error('PUT /api/admin/account failed:', error);
+    console.error('PUT /api/admin/account/profile failed:', error);
     res.status(500).json({ ok: false, error: '修改失败，请稍后重试' });
-  }
-});
-
-/** 设置/清除管理员登录用户名 */
-router.put('/account/username', async (req: AdminRequest, res) => {
-  try {
-    const clean = String(req.body?.username ?? '').trim();
-    if (clean && !USERNAME_RE.test(clean)) {
-      return res.status(400).json({ ok: false, error: '用户名为 2–32 位，可用字母、数字、下划线、连字符、中文' });
-    }
-    const identity = await verifyAdminIdentity(req, String(req.body?.currentPassword ?? ''));
-    if (!identity.ok) return res.status(401).json({ ok: false, error: identity.error });
-    await setDbAdminUsername(clean);
-    res.json({ ok: true });
-  } catch (error) {
-    console.error('PUT /api/admin/account/username failed:', error);
-    res.status(500).json({ ok: false, error: '保存失败，请稍后重试' });
   }
 });
 

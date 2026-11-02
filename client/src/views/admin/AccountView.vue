@@ -6,106 +6,61 @@
 
     <div v-else class="flex flex-col gap-5">
       <PageHeader
-        
-       
         title="账号安全"
-        subtitle="修改管理员登录账号与密码。修改即时生效，邮箱修改后当前登录态保持有效。"
+        subtitle="用户名、邮箱、密码一次改完：只改动与当前不同的项，改邮箱后当前登录态保持有效。"
       />
 
       <Card>
         <template #header>
-          <h2 class="text-[15px] font-medium text-slate-900">登录用户名</h2>
+          <h2 class="text-[15px] font-medium text-slate-900">管理员账号</h2>
           <p class="mt-0.5 text-[13px] text-slate-500">
-            当前：<span class="font-medium text-slate-700">{{ currentUsername || '未设置（仅邮箱登录）' }}</span>
+            当前：<span class="font-medium text-slate-700">{{ currentEmail || '—' }}</span>
+            <span v-if="currentUsername" class="text-slate-400">（{{ currentUsername }}）</span>
           </p>
         </template>
         <div class="flex flex-col gap-4">
           <Field
-            label="用户名"
-            hint="2–32 位，可用字母、数字、下划线、连字符、中文；留空保存则清除用户名"
+            label="登录用户名"
+            hint="2–32 位，可用字母、数字、下划线、连字符、中文；留空则清除，恢复为仅邮箱登录"
           >
             <TextInput
-              v-model="newUsername"
-              :placeholder="currentUsername ? '输入新用户名，或留空清除' : '例如 admin'"
+              v-model="username"
+              placeholder="例如 admin"
               autocomplete="username"
             />
           </Field>
-          <Field label="当前密码" hint="确认是本人操作">
-            <PasswordInput
-              v-model="usernamePassword"
-              placeholder="输入当前登录密码"
-              autocomplete="current-password"
-            />
-          </Field>
-          <div class="pt-1">
-            <AppButton variant="primary" :loading="savingUsername" @click="handleSaveUsername">
-              保存用户名
-            </AppButton>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <template #header>
-          <h2 class="text-[15px] font-medium text-slate-900">登录邮箱</h2>
-          <p class="mt-0.5 text-[13px] text-slate-500">
-            当前：<span class="font-medium text-slate-700">{{ currentEmail || '—' }}</span>
-          </p>
-        </template>
-        <div class="flex flex-col gap-4">
-          <Field label="新邮箱">
+          <Field label="登录邮箱">
             <TextInput
-              v-model="newEmail"
-              placeholder="输入新的管理员邮箱"
+              v-model="email"
+              placeholder="管理员邮箱"
               inputmode="email"
               autocomplete="email"
             />
           </Field>
-          <Field label="当前密码" hint="确认是本人操作">
-            <PasswordInput
-              v-model="emailPassword"
-              placeholder="输入当前登录密码"
-              autocomplete="current-password"
-            />
-          </Field>
-          <div class="pt-1">
-            <AppButton variant="primary" :loading="savingEmail" @click="handleSaveEmail">
-              保存邮箱
-            </AppButton>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <template #header>
-          <h2 class="text-[15px] font-medium text-slate-900">登录密码</h2>
-          <p class="mt-0.5 text-[13px] text-slate-500">至少 8 位，修改后下次登录使用新密码。</p>
-        </template>
-        <div class="flex flex-col gap-4">
-          <Field label="当前密码">
-            <PasswordInput
-              v-model="oldPassword"
-              placeholder="输入当前登录密码"
-              autocomplete="current-password"
-            />
-          </Field>
-          <Field label="新密码">
+          <Field label="新密码" hint="不改密码请留空；至少 8 位">
             <PasswordInput
               v-model="newPassword"
-              placeholder="至少 8 位"
+              placeholder="留空则不修改"
               autocomplete="new-password"
             />
           </Field>
-          <Field label="确认新密码">
+          <Field v-if="newPassword" label="确认新密码">
             <PasswordInput
               v-model="confirmPassword"
               placeholder="再次输入新密码"
               autocomplete="new-password"
             />
           </Field>
+          <Field label="当前密码" hint="确认是本人操作">
+            <PasswordInput
+              v-model="currentPassword"
+              placeholder="输入当前登录密码"
+              autocomplete="current-password"
+            />
+          </Field>
           <div class="pt-1">
-            <AppButton variant="primary" :loading="savingPassword" @click="handleSavePassword">
-              保存密码
+            <AppButton variant="primary" :loading="saving" @click="handleSave">
+              保存修改
             </AppButton>
           </div>
         </div>
@@ -130,18 +85,12 @@ const currentEmail = ref('')
 const currentUsername = ref('')
 const loading = ref(true)
 
-const newUsername = ref('')
-const usernamePassword = ref('')
-const savingUsername = ref(false)
-
-const newEmail = ref('')
-const emailPassword = ref('')
-const savingEmail = ref(false)
-
-const oldPassword = ref('')
+const username = ref('')
+const email = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
-const savingPassword = ref(false)
+const currentPassword = ref('')
+const saving = ref(false)
 
 async function loadAccount() {
   loading.value = true
@@ -149,6 +98,9 @@ async function loadAccount() {
     const account = await get<{ email: string; username: string }>('/admin/account')
     currentEmail.value = account.email
     currentUsername.value = account.username
+    // 表单预填当前值：用户直接改，空着不动的就是不改
+    username.value = account.username
+    email.value = account.email
   } catch (error) {
     toast.error(apiErrorMessage(error, '加载账号信息失败'))
   } finally {
@@ -156,79 +108,41 @@ async function loadAccount() {
   }
 }
 
-async function handleSaveUsername() {
-  savingUsername.value = true
-  try {
-    await put('/admin/account/username', {
-      currentPassword: usernamePassword.value,
-      username: newUsername.value.trim(),
-    })
-    const clean = newUsername.value.trim()
-    currentUsername.value = clean
-    newUsername.value = ''
-    usernamePassword.value = ''
-    toast.success(clean ? '登录用户名已设置，可用用户名或邮箱登录' : '已清除用户名，恢复为仅邮箱登录')
-  } catch (error) {
-    toast.error(apiErrorMessage(error, '保存失败'))
-  } finally {
-    savingUsername.value = false
-  }
-}
-
-async function handleSaveEmail() {
-  const clean = newEmail.value.trim()
-  if (!clean) {
-    toast.error('请输入新邮箱')
-    return
-  }
-  savingEmail.value = true
-  try {
-    const result = await put<{ ok: boolean; emailChanged?: boolean }>('/admin/account', {
-      currentPassword: emailPassword.value,
-      newEmail: clean,
-    })
-    if (!result.ok) {
-      toast.error('保存失败')
-      return
-    }
-    currentEmail.value = clean.toLowerCase()
-    newEmail.value = ''
-    emailPassword.value = ''
-    toast.success('登录邮箱已修改，即时生效')
-  } catch (error) {
-    toast.error(apiErrorMessage(error, '保存失败'))
-  } finally {
-    savingEmail.value = false
-  }
-}
-
-async function handleSavePassword() {
-  if (newPassword.value.length < 8) {
+async function handleSave() {
+  if (newPassword.value && newPassword.value.length < 8) {
     toast.error('新密码至少 8 位')
     return
   }
-  if (newPassword.value !== confirmPassword.value) {
+  if (newPassword.value && newPassword.value !== confirmPassword.value) {
     toast.error('两次输入的新密码不一致')
     return
   }
-  savingPassword.value = true
+  saving.value = true
   try {
-    const result = await put<{ ok: boolean }>('/admin/account', {
-      currentPassword: oldPassword.value,
-      newPassword: newPassword.value,
-    })
+    const result = await put<{ ok: boolean; emailChanged?: boolean; changed?: string[] }>(
+      '/admin/account/profile',
+      {
+        currentPassword: currentPassword.value,
+        username: username.value.trim(),
+        newEmail: email.value.trim(),
+        newPassword: newPassword.value,
+      }
+    )
     if (!result.ok) {
       toast.error('保存失败')
       return
     }
-    oldPassword.value = ''
+    currentEmail.value = email.value.trim().toLowerCase()
+    currentUsername.value = username.value.trim()
     newPassword.value = ''
     confirmPassword.value = ''
-    toast.success('登录密码已修改')
+    currentPassword.value = ''
+    const changed = (result.changed || []).join('、')
+    toast.success(changed ? `已修改：${changed}` : '已保存')
   } catch (error) {
     toast.error(apiErrorMessage(error, '保存失败'))
   } finally {
-    savingPassword.value = false
+    saving.value = false
   }
 }
 
