@@ -373,15 +373,74 @@ router.post('/links/batch-move', async (req, res) => {
 
 /* ---------------- AI ---------------- */
 
-/** 用 AI 生成网站描述（供链接表单的"AI 生成"按钮调用） */
+/** 抓目标页 <title>：只读前 64KB、8s 超时，读到 </title> 就停；失败返回 null */
+async function fetchPageTitle(rawUrl: string): Promise<string | null> {
+  try {
+    assertPublicHttpUrl(rawUrl);
+    const response = await fetch(rawUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; nav-vue/1.0)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return null;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType && !/text\/html|application\/xhtml/i.test(contentType)) return null;
+    const reader = response.body?.getReader();
+    if (!reader) return null;
+    const decoder = new TextDecoder();
+    let text = '';
+    const MAX_BYTES = 64 * 1024;
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      text += decoder.decode(value, { stream: true });
+      if (text.toLowerCase().includes('</title>') || total >= MAX_BYTES) {
+        await reader.cancel().catch(() => {});
+        break;
+      }
+    }
+    text += decoder.decode();
+    const match = text.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (!match) return null;
+    const clean = match[1]
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0?39;/gi, "'")
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 100);
+    return clean || null;
+  } catch {
+    return null;
+  }
+}
+
+/** 用 AI 生成网站名称 + 描述（供链接表单的"AI 生成"按钮调用）：只填 URL 即可 */
 router.post('/ai-describe', async (req, res) => {
   const title = String(req.body?.title ?? '').trim();
   const url = String(req.body?.url ?? '').trim();
-  if (!title) return res.status(400).json({ error: '请先填写网站名称' });
   if (!url) return res.status(400).json({ error: '请先填写网站 URL' });
   try {
-    const description = await callChatCompletions(`网站名称：${title}\n网站地址：${url}\n请用一句话（50 字以内）介绍这个网站是做什么的、适合谁用。`, 200);
-    res.json({ description });
+    new URL(url);
+  } catch {
+    return res.status(400).json({ error: 'URL 格式不正确' });
+  }
+  try {
+    // 没填名称就先抓页面 <title>，抓不到用域名兜底
+    let resolvedTitle = title;
+    if (!resolvedTitle) {
+      resolvedTitle = (await fetchPageTitle(url)) || new URL(url).hostname.replace(/^www\./, '');
+    }
+    const description = await callChatCompletions(`网站名称：${resolvedTitle}\n网站地址：${url}\n请用一句话（50 字以内）介绍这个网站是做什么的、适合谁用。`, 200);
+    res.json({ title: resolvedTitle, description });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'AI 生成失败' });
   }

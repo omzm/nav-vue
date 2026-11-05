@@ -25,7 +25,7 @@
               <TextInput v-model="title" placeholder="例如：GitHub" required />
             </Field>
 
-            <Field label="网站 URL" required>
+            <Field label="网站 URL" required hint="填好链接后点「AI 生成」，可自动获取网站名称与描述">
               <TextInput v-model="url" placeholder="https://github.com" inputmode="url" required />
             </Field>
 
@@ -269,22 +269,22 @@ function handleCategoryChange(nextCategoryId: string) {
 }
 
 async function handleAiGenerate() {
-  if (!title.value.trim()) {
-    toast.warning('请先填写网站名称')
-    return
-  }
+  // 只要求填 URL：名称没填时服务端抓页面 <title>自动补
   if (!url.value.trim()) {
     toast.warning('请先填写网站 URL')
     return
   }
   aiGenerating.value = true
   try {
-    const result = await post<{ description: string }>('/admin/ai-describe', {
+    const result = await post<{ title: string; description: string }>('/admin/ai-describe', {
       title: title.value.trim(),
       url: url.value.trim(),
     })
+    if (!title.value.trim() && result.title) {
+      title.value = result.title
+    }
     description.value = result.description
-    toast.success('描述已生成，可再手动调整')
+    toast.success('网站名称与描述已生成，可再手动调整')
   } catch (error) {
     toast.error(apiErrorMessage(error, '生成失败'))
   } finally {
