@@ -25,5 +25,5 @@
     "start": "node --import ./scripts/load-env.mjs dist/index.js"
   },
   "type": "module",
-  "version": "0.2.5"
+  "version": "0.3.0"
 }

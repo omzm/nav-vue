@@ -42,7 +42,11 @@ async function main() {
   const client = new pg.Client({
     connectionString: databaseUrl,
     connectionTimeoutMillis: 10000,
-    ssl: { rejectUnauthorized: true },
+    // Supabase Pooler 的证书链无法用 Node 默认 CA 校验（Vercel 构建环境
+    // 与本地均报 self-signed certificate in certificate chain），严格校验
+    // 会导致生产部署中断。仍走 TLS 加密，仅不校验证书链（与 Supabase 官方
+    // 给 Node 连 Pooler 的示例一致）。
+    ssl: { rejectUnauthorized: false },
   });
 
   try {

@@ -28,7 +28,7 @@
     "test:browser": "node tests/browser.mjs",
     "check": "npm run lint && npm run build && npm test"
   },
-  "version": "0.2.5",
+  "version": "0.3.0",
   "workspaces": [
     "client",
     "server"
