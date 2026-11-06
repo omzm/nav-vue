@@ -1,5 +1,8 @@
 <template>
-  <div class="fab fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3" :class="open ? 'open' : ''">
+  <div
+    class="fab fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3"
+    :class="open ? 'open' : ''"
+  >
     <button
       type="button"
       class="fab-act"
@@ -8,8 +11,18 @@
       aria-label="添加链接"
       @click="go('/admin/dashboard/link/new')"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M10 14a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" /><path d="M14 10a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1" />
+      <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.9"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M10 14a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" />
+        <path d="M14 10a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1" />
       </svg>
     </button>
     <button
@@ -20,8 +33,19 @@
       aria-label="添加分类"
       @click="go('/admin/dashboard/category/new')"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3.5 7a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7Z" />
+      <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.9"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path
+          d="M3.5 7a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7Z"
+        />
       </svg>
     </button>
     <button
@@ -32,7 +56,16 @@
       aria-label="后退一页"
       @click="goBack"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.9"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
         <path d="M19 12H5m0 0 6-6m-6 6 6 6" />
       </svg>
     </button>
@@ -52,36 +85,39 @@
         stroke-linejoin="round"
         aria-hidden="true"
       >
-        <rect x="4" y="4" width="6.5" height="6.5" rx="2" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="2" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="2" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2" />
+        <rect x="4" y="4" width="6.5" height="6.5" rx="2" />
+        <rect x="13.5" y="4" width="6.5" height="6.5" rx="2" />
+        <rect x="4" y="13.5" width="6.5" height="6.5" rx="2" />
+        <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2" />
       </svg>
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const open = ref(false)
-const router = useRouter()
-const route = useRoute()
+const open = ref(false);
+const router = useRouter();
+const route = useRoute();
 
 watch(
   () => route.path,
   () => {
-    open.value = false
-  }
-)
+    open.value = false;
+  },
+);
 
 function go(path: string) {
-  open.value = false
-  void router.push(path)
+  open.value = false;
+  void router.push(path);
 }
 
 function goBack() {
-  open.value = false
-  if (window.history.length > 1) router.back()
-  else void router.push('/admin/dashboard')
+  open.value = false;
+  if (window.history.length > 1) router.back();
+  else void router.push('/admin/dashboard');
 }
 </script>
 

@@ -7,7 +7,7 @@ const props = withDefaults(
     name: string;
     className?: string;
   }>(),
-  { className: '' }
+  { className: '' },
 );
 
 // computed 包裹：name prop 变化时图标实时更新（之前非响应式，实例复用会显示旧图标）

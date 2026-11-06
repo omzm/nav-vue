@@ -12,45 +12,50 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import Spinner from './Spinner.vue'
+import { computed } from 'vue';
+import Spinner from './Spinner.vue';
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
-    size?: 'sm' | 'md'
-    loading?: boolean
-    disabled?: boolean
-    type?: 'button' | 'submit' | 'reset'
-    block?: boolean
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+    size?: 'sm' | 'md';
+    loading?: boolean;
+    disabled?: boolean;
+    type?: 'button' | 'submit' | 'reset';
+    block?: boolean;
   }>(),
-  { variant: 'secondary', size: 'md', loading: false, disabled: false, type: 'button', block: false }
-)
+  {
+    variant: 'secondary',
+    size: 'md',
+    loading: false,
+    disabled: false,
+    type: 'button',
+    block: false,
+  },
+);
 
-defineEmits<{ click: [event: MouseEvent] }>()
+defineEmits<{ click: [event: MouseEvent] }>();
 
 const base =
-  'inline-flex select-none items-center justify-center gap-1.5 rounded-[14px] font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation active:scale-[0.97] active:brightness-95'
+  'inline-flex select-none items-center justify-center gap-1.5 rounded-[14px] font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation active:scale-[0.97] active:brightness-95';
 
 const variants: Record<string, string> = {
   primary:
     'bg-white text-ink border border-[#E7E7EC] shadow-[0_8px_20px_-10px_rgba(16,16,20,0.22)] hover:bg-[#FAFAFB] disabled:hover:bg-white',
-  secondary:
-    'bg-mist text-ink border border-transparent hover:bg-mist2',
-  danger:
-    'bg-red-600 text-white shadow-sm hover:bg-red-700 disabled:hover:bg-red-600',
+  secondary: 'bg-mist text-ink border border-transparent hover:bg-mist2',
+  danger: 'bg-red-600 text-white shadow-sm hover:bg-red-700 disabled:hover:bg-red-600',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-}
+};
 
 const sizes: Record<string, string> = {
   sm: 'h-9 px-3 text-[13px]',
   md: 'h-11 px-4 text-sm',
-}
+};
 
 const classes = computed(() => [
   base,
   variants[props.variant],
   sizes[props.size],
   props.block ? 'w-full' : '',
-])
+]);
 </script>

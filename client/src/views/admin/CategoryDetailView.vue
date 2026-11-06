@@ -6,7 +6,10 @@
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader :title="isEdit ? '编辑分类' : '添加分类'" subtitle="设置分类名称、图标与展示方式。" />
+      <PageHeader
+        :title="isEdit ? '编辑分类' : '添加分类'"
+        subtitle="设置分类名称、图标与展示方式。"
+      />
 
       <form @submit.prevent="handleSubmit">
         <div class="grid gap-5 lg:grid-cols-[1fr_320px]">
@@ -31,7 +34,9 @@
               <p class="text-xs leading-5 text-slate-400">
                 {{ icon.trim() ? '图标预览已生成' : '选择图标后会在这里显示' }}
               </p>
-              <span class="mt-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white text-3xl text-slate-600">
+              <span
+                class="mt-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white text-3xl text-slate-600"
+              >
                 <CategoryIcon :icon="icon" />
               </span>
             </Card>
@@ -55,9 +60,10 @@
     </div>
 
     <!-- 公开→私密时的级联确认 -->
-    <Modal :open="cascade !== null" title="同步设为私密？" @close="closeCascade(false)">
+    <Modal :open="cascade !== null" title="同步设为私密？" @close="closeCascade(null)">
       <p>
-        该分类下还有 <strong class="font-medium text-slate-900">{{ cascade?.count ?? 0 }}</strong> 个公开链接，
+        该分类下还有
+        <strong class="font-medium text-slate-900">{{ cascade?.count ?? 0 }}</strong> 个公开链接，
         是否同步将它们设为私密？（仅设分类私密不会影响链接自身的公开状态）
       </p>
       <template #footer>
@@ -69,135 +75,122 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { post, put } from '@/api/client'
-import { loadAdminData, refreshSnapshot, useAdminData } from '@/composables/useAdminData'
-import { apiErrorMessage, toast } from '@/composables/useToast'
-import AppButton from '@/components/admin/AppButton.vue'
-import Card from '@/components/admin/Card.vue'
-import CategoryIcon from '@/components/admin/CategoryIcon.vue'
-import Field from '@/components/admin/Field.vue'
-import IconPicker from '@/components/admin/IconPicker.vue'
-import Modal from '@/components/admin/Modal.vue'
-import NumberInput from '@/components/admin/NumberInput.vue'
-import PageHeader from '@/components/admin/PageHeader.vue'
-import Spinner from '@/components/admin/Spinner.vue'
-import Switch from '@/components/admin/Switch.vue'
-import TextInput from '@/components/admin/TextInput.vue'
+import { computed, onMounted, ref } from 'vue';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import { post, put } from '@/api/client';
+import { loadAdminData, useAdminData } from '@/composables/useAdminData';
+import { apiErrorMessage, toast } from '@/composables/useToast';
+import AppButton from '@/components/admin/AppButton.vue';
+import Card from '@/components/admin/Card.vue';
+import CategoryIcon from '@/components/admin/CategoryIcon.vue';
+import Field from '@/components/admin/Field.vue';
+import IconPicker from '@/components/admin/IconPicker.vue';
+import Modal from '@/components/admin/Modal.vue';
+import NumberInput from '@/components/admin/NumberInput.vue';
+import PageHeader from '@/components/admin/PageHeader.vue';
+import Spinner from '@/components/admin/Spinner.vue';
+import Switch from '@/components/admin/Switch.vue';
+import TextInput from '@/components/admin/TextInput.vue';
 
-const router = useRouter()
-const route = useRoute()
-const { categories, links, loadData } = useAdminData()
+const router = useRouter();
+const route = useRoute();
+const { categories, links, loadData } = useAdminData();
 
-const categoryId = computed(() => route.params.id as string)
-const isEdit = computed(() => Boolean(categoryId.value) && categoryId.value !== 'new')
+const categoryId = computed(() => route.params.id as string);
+const isEdit = computed(() => Boolean(categoryId.value) && categoryId.value !== 'new');
 
-const name = ref('')
-const icon = ref('')
-const order = ref(0)
-const isPrivate = ref(false)
+const name = ref('');
+const icon = ref('');
+const order = ref(0);
+const isPrivate = ref(false);
 // 记录加载时的原始私密状态：仅当"公开 -> 私密"转变时才弹出级联确认
-const originalIsPrivate = ref(false)
-const saving = ref(false)
-const savingRef = ref(false)
-const dataLoading = ref(false)
+const originalIsPrivate = ref(false);
+const saving = ref(false);
+let active = true;
+const dataLoading = ref(false);
 
 // 级联私密确认弹窗（promise 桥接）
-const cascade = ref<{ count: number; resolve: (value: boolean) => void } | null>(null)
+const cascade = ref<{ count: number; resolve: (value: boolean | null) => void } | null>(null);
 
-function closeCascade(value: boolean) {
-  cascade.value?.resolve(value)
-  cascade.value = null
+function closeCascade(value: boolean | null) {
+  cascade.value?.resolve(value);
+  cascade.value = null;
 }
 
 function goBack() {
-  router.back()
+  router.back();
 }
 
 async function handleSubmit() {
-  if (savingRef.value) return
-  if (!name.value.trim()) {
-    toast.warning('请填写分类名称')
-    return
+  if (saving.value) return;
+  if (!name.value.trim() || !icon.value.trim()) {
+    toast.warning('请填写分类名称并选择图标');
+    return;
   }
-  if (!icon.value.trim()) {
-    toast.warning('请选择或填写分类图标')
-    return
-  }
-
-  // 分类从公开变为私密时，先确认是否级联旗下链接，再执行更新
-  let syncLinksPrivate = false
-  if (isEdit.value && isPrivate.value && !originalIsPrivate.value) {
-    const publicLinkCount = links.value.filter(
-      (l) => l.category_id === categoryId.value && !l.is_private
-    ).length
-    if (publicLinkCount > 0) {
-      syncLinksPrivate = await new Promise<boolean>((resolve) => {
-        cascade.value = { count: publicLinkCount, resolve }
-      })
-    }
-  }
-
-  savingRef.value = true
-  saving.value = true
+  const id = categoryId.value;
+  const editing = isEdit.value;
+  const payload = {
+    name: name.value.trim(),
+    icon: icon.value.trim(),
+    order: order.value,
+    is_private: isPrivate.value,
+    syncLinksPrivate: false,
+  };
+  saving.value = true;
   try {
-    const payload = {
-      name: name.value.trim(),
-      icon: icon.value.trim(),
-      order: order.value,
-      is_private: isPrivate.value,
-      ...(syncLinksPrivate ? { syncLinksPrivate: true } : {}),
+    if (editing && payload.is_private && !originalIsPrivate.value) {
+      const count = links.value.filter(
+        (link) => link.category_id === id && !link.is_private,
+      ).length;
+      if (count) {
+        const choice = await new Promise<boolean | null>((resolve) => {
+          cascade.value = { count, resolve };
+        });
+        if (choice === null || !active) return;
+        payload.syncLinksPrivate = choice;
+      }
     }
-    if (isEdit.value) {
-      await put(`/admin/categories/${categoryId.value}`, payload)
-      toast.success('分类已更新')
-    } else {
-      await post('/admin/categories', payload)
-      toast.success('分类已添加')
-    }
-    await refreshSnapshot()
-    await loadData(true, { silent: true })
-    await router.push('/admin/dashboard/categories')
+    if (!active) return;
+    if (editing) await put('/admin/categories/' + id, payload);
+    else await post('/admin/categories', payload);
+    toast.success(editing ? '分类已更新' : '分类已添加');
+    await loadData(true, { silent: true });
+    if (active) await router.push('/admin/dashboard/categories');
   } catch (error) {
-    toast.error(apiErrorMessage(error, '保存失败，请重试'))
+    toast.error(apiErrorMessage(error, '保存失败，请重试'));
   } finally {
-    savingRef.value = false
-    saving.value = false
+    saving.value = false;
   }
 }
 
-onUnmounted(() => {
-  // 确认弹窗开着时切走路由：按"取消"结算 promise，避免 handleSubmit 的 await 永远挂起
-  if (cascade.value) {
-    cascade.value.resolve(false)
-    cascade.value = null
-  }
-})
+onBeforeRouteLeave(() => {
+  active = false;
+  closeCascade(null);
+});
 
 onMounted(async () => {
-  await loadAdminData()
+  await loadAdminData();
   if (!isEdit.value) {
     // 新建：默认排序值为当前最大 + 1
-    const maxOrder = categories.value.reduce((max, c) => Math.max(max, c.order), 0)
-    order.value = maxOrder + 1
-    return
+    const maxOrder = categories.value.reduce((max, c) => Math.max(max, c.order), 0);
+    order.value = maxOrder + 1;
+    return;
   }
-  dataLoading.value = true
+  dataLoading.value = true;
   try {
-    const category = categories.value.find((c) => c.id === categoryId.value)
+    const category = categories.value.find((c) => c.id === categoryId.value);
     if (!category) {
-      toast.error('该分类不存在，可能已被删除')
-      await router.replace('/admin/dashboard/categories')
-      return
+      toast.error('该分类不存在，可能已被删除');
+      await router.replace('/admin/dashboard/categories');
+      return;
     }
-    name.value = category.name
-    icon.value = category.icon || ''
-    order.value = category.order
-    isPrivate.value = category.is_private
-    originalIsPrivate.value = category.is_private
+    name.value = category.name;
+    icon.value = category.icon || '';
+    order.value = category.order;
+    isPrivate.value = category.is_private;
+    originalIsPrivate.value = category.is_private;
   } finally {
-    dataLoading.value = false
+    dataLoading.value = false;
   }
-})
+});
 </script>

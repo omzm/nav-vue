@@ -1,5 +1,7 @@
 <template>
   <textarea
+    :id="field?.id"
+    :aria-describedby="field?.hintId"
     :value="modelValue"
     :placeholder="placeholder"
     :rows="rows"
@@ -11,16 +13,18 @@
 </template>
 
 <script setup lang="ts">
+import { useField } from '@/composables/useField';
+const field = useField();
 withDefaults(
   defineProps<{
-    modelValue: string
-    placeholder?: string
-    rows?: number
-    required?: boolean
-    disabled?: boolean
+    modelValue: string;
+    placeholder?: string;
+    rows?: number;
+    required?: boolean;
+    disabled?: boolean;
   }>(),
-  { placeholder: '', rows: 4, required: false, disabled: false }
-)
+  { placeholder: '', rows: 4, required: false, disabled: false },
+);
 
-defineEmits<{ 'update:modelValue': [value: string] }>()
+defineEmits<{ 'update:modelValue': [value: string] }>();
 </script>

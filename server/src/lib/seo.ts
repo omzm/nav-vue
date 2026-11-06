@@ -1,4 +1,5 @@
-import type { Request, Response } from 'express'
+import { env } from './env.js';
+import type { Request, Response } from 'express';
 
 /**
  * SEO 文件动态生成：robots.txt / sitemap.xml 按当前请求的域名输出，
@@ -10,17 +11,24 @@ import type { Request, Response } from 'express'
  * 其他一律回落默认域名。直接信任 x-forwarded-host 会被伪造，
  * 导致 robots/sitemap 内容投毒（带 1h 公开缓存）。
  */
-const SAFE_HOST_RE = /^[a-zA-Z0-9.-]+(?::\d+)?$/
-const DEFAULT_HOST = '1.145678.xyz'
+const SAFE_HOST_RE = /^[a-zA-Z0-9.-]+(?::\d+)?$/;
+const DEFAULT_HOST = '1.145678.xyz';
 
 function siteUrl(req: Request): string {
-  // req.hostname 走 trust proxy 解析，比裸读 x-forwarded-host 可信
-  const rawHost = req.hostname || req.get('host') || ''
-  const host = SAFE_HOST_RE.test(rawHost) ? rawHost : DEFAULT_HOST
-  const proto =
-    req.get('x-forwarded-proto') ??
-    (host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https')
-  return `${proto}://${host}`
+  if (env.siteUrl) {
+    const canonical = new URL(env.siteUrl);
+    if (
+      !['http:', 'https:'].includes(canonical.protocol) ||
+      canonical.username ||
+      canonical.password
+    )
+      throw new Error('SITE_URL 格式不正确');
+    return canonical.origin;
+  }
+  // Forwarded headers are client-controlled outside a correctly configured proxy.
+  const rawHost = req.get('host') || '';
+  const host = SAFE_HOST_RE.test(rawHost) ? rawHost : DEFAULT_HOST;
+  return (env.isProd ? 'https://' : 'http://') + host;
 }
 
 export function robotsTxt(req: Request, res: Response) {
@@ -33,11 +41,8 @@ export function robotsTxt(req: Request, res: Response) {
     '',
     `Sitemap: ${siteUrl(req)}/sitemap.xml`,
     '',
-  ].join('\n')
-  res
-    .type('text/plain')
-    .set('Cache-Control', 'public, max-age=3600')
-    .send(body)
+  ].join('\n');
+  res.type('text/plain').set('Cache-Control', 'no-store').send(body);
 }
 
 export function sitemapXml(req: Request, res: Response) {
@@ -52,9 +57,6 @@ export function sitemapXml(req: Request, res: Response) {
     '</url>',
     '</urlset>',
     '',
-  ].join('\n')
-  res
-    .type('application/xml')
-    .set('Cache-Control', 'public, max-age=3600')
-    .send(body)
+  ].join('\n');
+  res.type('application/xml').set('Cache-Control', 'no-store').send(body);
 }

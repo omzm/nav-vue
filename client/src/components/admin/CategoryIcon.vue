@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import BaseCategoryIcon from '@/components/CategoryIcon.vue'
-import IconFont from './IconFont.vue'
+import { computed } from 'vue';
+import BaseCategoryIcon from '@/components/CategoryIcon.vue';
+import IconFont from '@/components/IconFont.vue';
 
-const props = defineProps<{ icon?: string | null }>()
+const props = defineProps<{ icon?: string | null }>();
 
-const value = computed(() => (props.icon ?? '').trim())
+const value = computed(() => (props.icon ?? '').trim());
 </script>
 
 <template>

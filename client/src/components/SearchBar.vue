@@ -33,7 +33,12 @@ onMounted(() => {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
     </svg>
     <button
       v-if="props.value"
@@ -42,7 +47,12 @@ onMounted(() => {
       @click="props.onChange('')"
     >
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-4 h-4">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        />
       </svg>
     </button>
     <!-- 快捷键提示：只在细指针设备（键鼠）显示，触屏设备隐藏 -->

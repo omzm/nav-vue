@@ -3,12 +3,15 @@
     "@supabase/supabase-js": "^2.47.0",
     "cookie-parser": "^1.4.6",
     "express": "^4.21.2",
-    "pg": "^8.13.1"
+    "express-async-errors": "^3.1.1",
+    "ipaddr.js": "^1.9.1",
+    "pg": "^8.13.1",
+    "undici": "^8.12.4"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.11.0",
+    "@types/node": "^24.19.2",
     "@types/pg": "^8.11.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
@@ -17,9 +20,9 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/index.ts",
+    "dev": "node --import ./scripts/load-env.mjs --import tsx --watch src/index.ts",
     "migrate": "node scripts/migrate.mjs",
-    "start": "node dist/index.js"
+    "start": "node --import ./scripts/load-env.mjs dist/index.js"
   },
   "type": "module",
   "version": "0.2.5"

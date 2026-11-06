@@ -1,3 +1,5 @@
+import { assertPublicHttpUrl, fetchPublic } from './publicHttp.js';
+export { assertPublicHttpUrl } from './publicHttp.js';
 import { createServiceClient } from './supabase.js';
 
 /**
@@ -41,7 +43,7 @@ export async function callChatCompletions(userPrompt: string, maxTokens = 200): 
 
   let response: Response;
   try {
-    response = await fetch(`${apiBase}/chat/completions`, {
+    response = await fetchPublic(`${apiBase}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -49,14 +51,15 @@ export async function callChatCompletions(userPrompt: string, maxTokens = 200): 
         messages: [
           {
             role: 'system',
-            content: '你是一个网站导航站的中文编辑。请用简体中文写网站描述，只输出描述正文，不要解释、不要加引号、不要用 markdown。',
+            content:
+              '你是一个网站导航站的中文编辑。请用简体中文写网站描述，只输出描述正文，不要解释、不要加引号、不要用 markdown。',
           },
           { role: 'user', content: userPrompt },
         ],
         max_tokens: maxTokens,
         temperature: 0.7,
       }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(8000),
     });
   } catch {
     throw new Error('无法连接到 API 地址（网络不通或超时），请检查地址是否正确');
@@ -87,35 +90,8 @@ export async function callChatCompletions(userPrompt: string, maxTokens = 200): 
   return text;
 }
 
-/**
- * SSRF 防护：只允许公网 http(s) 地址，拒绝本地/内网字面量。
- * 注意：fetch 会跟随 302 跳转，公网 URL 跳转到内网仍可绕过——
- * 该检查防的是直接填内网地址的误配/内鬼场景，非完整 SSRF 沙箱。
- */
-export function assertPublicHttpUrl(apiBase: string): void {
-  let url: URL;
-  try {
-    url = new URL(apiBase);
-  } catch {
-    throw new Error('API 地址格式不正确');
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('API 地址必须以 http:// 或 https:// 开头');
-  }
-  const host = url.hostname.toLowerCase();
-  const blocked =
-    /^(localhost|0\.0\.0\.0|\[::1\]|::1)$/.test(host) ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host);
-  if (blocked) {
-    throw new Error('API 地址不允许指向本地或内网地址');
-  }
-}
-
 /** 有界读取 JSON：防止异常中转返回超大 body 拖垮服务端 */
-async function readJsonBounded(response: Response, maxBytes = 1_000_000): Promise<unknown> {
+export async function readJsonBounded(response: Response, maxBytes = 1_000_000): Promise<unknown> {
   const declared = Number(response.headers.get('content-length') || 0);
   if (declared > maxBytes) {
     await response.body?.cancel().catch(() => {});

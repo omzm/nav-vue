@@ -1,24 +1,47 @@
+import { randomUUID } from 'node:crypto';
+import { readAllRows } from '../lib/pagination.js';
+import { validIds, validOrder, assertHttpUrl, UUID_RE } from '../lib/validation.js';
+import { fetchPublic } from '../lib/publicHttp.js';
+import { isRateLimitedDb } from '../lib/rateLimitDb.js';
+import { getClientIp } from '../lib/rateLimit.js';
 import { Router } from 'express';
 import { createAnonClient, createServiceClient } from '../lib/supabase.js';
 import { requireAdmin, type AdminRequest } from '../middleware/requireAdmin.js';
 import { invalidateSnapshot } from '../lib/snapshot.js';
-import { readAiCredentials, callChatCompletions, assertPublicHttpUrl, AI_API_BASE_KEY, AI_API_KEY_KEY, AI_MODEL_KEY } from '../lib/aiClient.js';
 import {
-  ADMIN_COOKIE_NAME,
-  adminCookieOptions,
-  signAdminToken,
-  verifyAdminToken,
-} from '../lib/adminAuth.js';
-import { ADMIN_EMAIL_KEY, getDbAdminEmail, getDbAdminUsername, setDbAdminUsername } from '../lib/adminConfig.js';
+  readAiCredentials,
+  callChatCompletions,
+  readJsonBounded,
+  assertPublicHttpUrl,
+  AI_API_BASE_KEY,
+  AI_API_KEY_KEY,
+  AI_MODEL_KEY,
+} from '../lib/aiClient.js';
+import { ADMIN_COOKIE_NAME, adminCookieOptions, signAdminToken } from '../lib/adminAuth.js';
+import {
+  ADMIN_EMAIL_KEY,
+  ADMIN_USERNAME_KEY,
+  ADMIN_SESSION_VERSION_KEY,
+} from '../lib/adminConfig.js';
 import { normalizeUrl } from '../lib/url.js';
 
 const router = Router();
 router.use(requireAdmin);
+router.use((req, res, next) => {
+  if (
+    !validOrder(req.body?.order) ||
+    (req.body?.is_private !== undefined && typeof req.body.is_private !== 'boolean') ||
+    (req.body?.isPrivate !== undefined && typeof req.body.isPrivate !== 'boolean') ||
+    (req.body?.syncLinksPrivate !== undefined && typeof req.body.syncLinksPrivate !== 'boolean')
+  ) {
+    return res.status(400).json({ error: '排序值或可见性格式不正确' });
+  }
+  next();
+});
 
 const UNLOCK_PHRASE_KEY = 'unlock_phrase';
 const DEFAULT_UNLOCK_PHRASE = '开门';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const USERNAME_RE = /^[\w\u4e00-\u9fa5-]{2,32}$/;
 
 /* ---------------- 数据总览 ---------------- */
@@ -27,7 +50,9 @@ const USERNAME_RE = /^[\w\u4e00-\u9fa5-]{2,32}$/;
  * 手动刷新首页快照（需管理员会话）。
  * 公开刷新可被滥用打穿缓存，因此仅管理员可见/可用。
  */
-router.post('/refresh-snapshot', (_req, res) => {
+router.post('/refresh-snapshot', async (_req, res) => {
+  const { error } = await createServiceClient().rpc('bump_nav_snapshot_version');
+  if (error) throw error;
   invalidateSnapshot();
   res.json({ ok: true });
 });
@@ -36,13 +61,11 @@ router.post('/refresh-snapshot', (_req, res) => {
 router.get('/data', async (_req, res) => {
   try {
     const svc = createServiceClient();
-    const [categoriesResult, linksResult] = await Promise.all([
-      svc.from('categories').select('*').order('order', { ascending: true }),
-      svc.from('links').select('*').order('order', { ascending: true }),
+    const [categories, links] = await Promise.all([
+      readAllRows(svc, 'categories'),
+      readAllRows(svc, 'links'),
     ]);
-    if (categoriesResult.error) throw categoriesResult.error;
-    if (linksResult.error) throw linksResult.error;
-    res.json({ categories: categoriesResult.data || [], links: linksResult.data || [] });
+    res.json({ categories, links });
   } catch (error) {
     console.error('GET /api/admin/data failed:', error);
     res.status(500).json({ error: '加载数据失败' });
@@ -52,8 +75,12 @@ router.get('/data', async (_req, res) => {
 /* ---------------- 分类 CRUD ---------------- */
 
 router.post('/categories', async (req, res) => {
-  const name = String(req.body?.name ?? '').trim().slice(0, 100);
-  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000);
+  const name = String(req.body?.name ?? '')
+    .trim()
+    .slice(0, 100);
+  const icon = String(req.body?.icon ?? '')
+    .trim()
+    .slice(0, 2000);
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
   if (!name) return res.status(400).json({ error: '分类名称不能为空' });
@@ -77,32 +104,28 @@ router.put('/categories/:id', async (req, res) => {
   if (!UUID_RE.test(id)) {
     return res.status(400).json({ ok: false, error: '无效的分类 ID' });
   }
-  const name = String(req.body?.name ?? '').trim().slice(0, 100);
-  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000);
+  const name = String(req.body?.name ?? '')
+    .trim()
+    .slice(0, 100);
+  const icon = String(req.body?.icon ?? '')
+    .trim()
+    .slice(0, 2000);
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
   /** 分类改公开→私密时，是否把名下公开链接同步为私密 */
   const syncLinksPrivate = Boolean(req.body?.syncLinksPrivate);
   if (!name) return res.status(400).json({ error: '分类名称不能为空' });
   try {
-    const svc = createServiceClient();
-    const { data: updated, error } = await svc
-      .from('categories')
-      .update({ name, icon, order, is_private })
-      .eq('id', id)
-      .select('id');
+    const { data: updated, error } = await createServiceClient().rpc('admin_update_category', {
+      p_id: id,
+      p_name: name,
+      p_icon: icon,
+      p_order: order,
+      p_private: is_private,
+      p_cascade: syncLinksPrivate,
+    });
     if (error) throw error;
-    if (!updated || updated.length === 0) {
-      return res.status(404).json({ error: '该分类不存在，可能已被删除' });
-    }
-    if (syncLinksPrivate && is_private) {
-      const { error: linkError } = await svc
-        .from('links')
-        .update({ is_private: true })
-        .eq('category_id', id)
-        .eq('is_private', false);
-      if (linkError) throw linkError;
-    }
+    if (!updated) return res.status(404).json({ error: '该分类不存在，可能已被删除' });
     invalidateSnapshot();
     res.json({ ok: true });
   } catch (error) {
@@ -117,7 +140,10 @@ router.delete('/categories/:id', async (req, res) => {
     if (!UUID_RE.test(req.params.id)) {
       return res.status(400).json({ ok: false, error: '无效的分类 ID' });
     }
-    const { error } = await createServiceClient().from('categories').delete().eq('id', req.params.id);
+    const { error } = await createServiceClient()
+      .from('categories')
+      .delete()
+      .eq('id', req.params.id);
     if (error) throw error;
     invalidateSnapshot();
     res.json({ ok: true });
@@ -128,7 +154,6 @@ router.delete('/categories/:id', async (req, res) => {
 });
 
 /* ---------------- 链接 CRUD ---------------- */
-
 
 /** URL 去重检查（编辑时排除自身） */
 router.get('/links/check-duplicate', async (req, res) => {
@@ -152,23 +177,32 @@ router.get('/links/check-duplicate', async (req, res) => {
 
 router.post('/links', async (req, res) => {
   const category_id = String(req.body?.category_id ?? '').trim();
-  const title = String(req.body?.title ?? '').trim().slice(0, 100);
+  const title = String(req.body?.title ?? '')
+    .trim()
+    .slice(0, 100);
   const rawUrl = String(req.body?.url ?? '').trim();
-  const description = String(req.body?.description ?? '').trim().slice(0, 500);
-  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000) || null;
+  const description = String(req.body?.description ?? '')
+    .trim()
+    .slice(0, 500);
+  const icon =
+    String(req.body?.icon ?? '')
+      .trim()
+      .slice(0, 2000) || null;
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
-  if (!category_id) return res.status(400).json({ error: '请选择分类' });
+  if (!UUID_RE.test(category_id)) return res.status(400).json({ error: '请选择分类' });
   if (!title) return res.status(400).json({ error: '请填写网站名称' });
   try {
-    new URL(rawUrl);
+    assertHttpUrl(rawUrl);
   } catch {
     return res.status(400).json({ error: 'URL 格式不正确' });
   }
   try {
     const { data, error } = await createServiceClient()
       .from('links')
-      .insert([{ category_id, title, url: normalizeUrl(rawUrl), description, icon, order, is_private }])
+      .insert([
+        { category_id, title, url: normalizeUrl(rawUrl), description, icon, order, is_private },
+      ])
       .select('id')
       .single();
     if (error) throw error;
@@ -186,23 +220,38 @@ router.put('/links/:id', async (req, res) => {
     return res.status(400).json({ ok: false, error: '无效的链接 ID' });
   }
   const category_id = String(req.body?.category_id ?? '').trim();
-  const title = String(req.body?.title ?? '').trim().slice(0, 100);
+  const title = String(req.body?.title ?? '')
+    .trim()
+    .slice(0, 100);
   const rawUrl = String(req.body?.url ?? '').trim();
-  const description = String(req.body?.description ?? '').trim().slice(0, 500);
-  const icon = String(req.body?.icon ?? '').trim().slice(0, 2000) || null;
+  const description = String(req.body?.description ?? '')
+    .trim()
+    .slice(0, 500);
+  const icon =
+    String(req.body?.icon ?? '')
+      .trim()
+      .slice(0, 2000) || null;
   const order = Number(req.body?.order) || 0;
   const is_private = Boolean(req.body?.is_private);
-  if (!category_id) return res.status(400).json({ error: '请选择分类' });
+  if (!UUID_RE.test(category_id)) return res.status(400).json({ error: '请选择分类' });
   if (!title) return res.status(400).json({ error: '请填写网站名称' });
   try {
-    new URL(rawUrl);
+    assertHttpUrl(rawUrl);
   } catch {
     return res.status(400).json({ error: 'URL 格式不正确' });
   }
   try {
     const { data: updated, error } = await createServiceClient()
       .from('links')
-      .update({ category_id, title, url: normalizeUrl(rawUrl), description, icon, order, is_private })
+      .update({
+        category_id,
+        title,
+        url: normalizeUrl(rawUrl),
+        description,
+        icon,
+        order,
+        is_private,
+      })
       .eq('id', id)
       .select('id');
     if (error) throw error;
@@ -234,8 +283,8 @@ router.delete('/links/:id', async (req, res) => {
 
 /** 批量删除链接 */
 router.post('/links/batch-delete', async (req, res) => {
-  const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((id: unknown) => typeof id === 'string') : [];
-  if (ids.length === 0) return res.status(400).json({ error: '请选择要删除的链接' });
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  if (!validIds(ids)) return res.status(400).json({ error: '请选择要删除的链接' });
   try {
     const { error } = await createServiceClient().from('links').delete().in('id', ids);
     if (error) throw error;
@@ -249,11 +298,14 @@ router.post('/links/batch-delete', async (req, res) => {
 
 /** 批量设置可见性 */
 router.post('/links/batch-visibility', async (req, res) => {
-  const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((id: unknown) => typeof id === 'string') : [];
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
   const isPrivate = Boolean(req.body?.isPrivate);
-  if (ids.length === 0) return res.status(400).json({ error: '请选择要设置的链接' });
+  if (!validIds(ids)) return res.status(400).json({ error: '请选择要设置的链接' });
   try {
-    const { error } = await createServiceClient().from('links').update({ is_private: isPrivate }).in('id', ids);
+    const { error } = await createServiceClient()
+      .from('links')
+      .update({ is_private: isPrivate })
+      .in('id', ids);
     if (error) throw error;
     invalidateSnapshot();
     res.json({ ok: true, count: ids.length });
@@ -263,29 +315,19 @@ router.post('/links/batch-visibility', async (req, res) => {
   }
 });
 
-/**
- * 按给定 id 顺序批量写入 order（links / categories 共用）。
- * 注：nav 用 reorder_* RPC（内含 is_admin() JWT 校验）；本服务端已过 requireAdmin
- * 会话鉴权，且 service_role 下 auth.jwt() 为空会导致 RPC 拒调，因此直接写 order 列，
- * 语义与 RPC 一致（按数组顺序赋 1..n）。
- */
+/** One transaction and one network roundtrip for an entire ordering operation. */
 async function applyOrder(table: 'links' | 'categories', orderedIds: string[]): Promise<void> {
-  const svc = createServiceClient();
-  const results = await Promise.all(
-    orderedIds.map((id, index) =>
-      svc.from(table).update({ order: index + 1 }).eq('id', id)
-    )
-  );
-  const failed = results.find((r) => r.error);
-  if (failed?.error) throw failed.error;
+  const { error } = await createServiceClient().rpc('admin_reorder_items', {
+    p_table: table,
+    p_ids: orderedIds,
+  });
+  if (error) throw error;
 }
 
 /** 链接排序：按 orderedIds 的顺序重写 order（拖拽排序/上移下移用） */
 router.post('/links/reorder', async (req, res) => {
-  const orderedIds = Array.isArray(req.body?.orderedIds)
-    ? req.body.orderedIds.filter((id: unknown) => typeof id === 'string')
-    : [];
-  if (orderedIds.length === 0) return res.status(400).json({ error: '排序列表为空' });
+  const orderedIds = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds : [];
+  if (!validIds(orderedIds)) return res.status(400).json({ error: '排序列表为空' });
   try {
     await applyOrder('links', orderedIds);
     invalidateSnapshot();
@@ -301,7 +343,7 @@ router.post('/categories/reorder', async (req, res) => {
   const orderedIds = Array.isArray(req.body?.orderedIds)
     ? req.body.orderedIds.filter((id: unknown) => typeof id === 'string')
     : [];
-  if (orderedIds.length === 0) return res.status(400).json({ error: '排序列表为空' });
+  if (!validIds(orderedIds)) return res.status(400).json({ error: '排序列表为空' });
   try {
     await applyOrder('categories', orderedIds);
     invalidateSnapshot();
@@ -312,63 +354,19 @@ router.post('/categories/reorder', async (req, res) => {
   }
 });
 
-/**
- * 批量移动链接到目标分类。
- * 1. 更新 category_id，并把可见性与目标分类保持一致（避免私密分类下出现公开链接）；
- * 2. 重排目标分类：原有链接按序 + 移入的链接按原顺序追加。
- * moved 语义与 nav 一致：分类已更新但排序失败时，前端需准确提示"已移动但排序未保存"。
- */
+/** Move and append ordering commit together. */
 router.post('/links/batch-move', async (req, res) => {
-  const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((id: unknown) => typeof id === 'string') : [];
-  const categoryId = String(req.body?.categoryId ?? '').trim();
-  if (ids.length === 0) return res.status(400).json({ error: '请选择要移动的链接' });
-  if (!categoryId) return res.status(400).json({ error: '请选择目标分类' });
-
-  const svc = createServiceClient();
-  let moved = false;
-  try {
-    const { data: target, error: targetError } = await svc
-      .from('categories')
-      .select('id, name, is_private')
-      .eq('id', categoryId)
-      .maybeSingle();
-    if (targetError) throw targetError;
-    if (!target) return res.status(400).json({ error: '目标分类不存在' });
-
-    // 当前顺序（用于"移入的链接按原顺序追加"）
-    const { data: movingLinks, error: movingError } = await svc
-      .from('links')
-      .select('id, order')
-      .in('id', ids)
-      .order('order', { ascending: true });
-    if (movingError) throw movingError;
-
-    const { error: updateError } = await svc
-      .from('links')
-      .update({ category_id: categoryId, is_private: Boolean(target.is_private) })
-      .in('id', ids);
-    if (updateError) throw updateError;
-    moved = true;
-
-    const { data: targetLinks, error: queryError } = await svc
-      .from('links')
-      .select('id')
-      .eq('category_id', categoryId)
-      .order('order', { ascending: true });
-    if (queryError) throw queryError;
-
-    const movedSet = new Set(ids);
-    const stayingIds = (targetLinks || []).filter((l) => !movedSet.has(l.id)).map((l) => l.id);
-    const movedIds = (movingLinks || []).map((l) => l.id);
-    await applyOrder('links', [...stayingIds, ...movedIds]);
-
-    invalidateSnapshot();
-    res.json({ ok: true, count: ids.length, categoryName: target.name });
-  } catch (error) {
-    console.error('POST /api/admin/links/batch-move failed:', error);
-    // moved=true 时链接实际已移动：如实返回，让前端提示"已移动但排序未保存"
-    res.status(500).json({ error: moved ? '链接已移动，但排序保存失败，请手动调整顺序' : '移动失败，请稍后重试', moved });
-  }
+  const ids = req.body?.ids;
+  const categoryId = String(req.body?.categoryId ?? '');
+  if (!validIds(ids) || !UUID_RE.test(categoryId))
+    return res.status(400).json({ error: '链接或分类 ID 不正确' });
+  const { data, error } = await createServiceClient().rpc('admin_move_links', {
+    p_ids: ids,
+    p_category_id: categoryId,
+  });
+  if (error) return res.status(500).json({ error: '移动失败，数据未变更，请刷新后重试' });
+  invalidateSnapshot();
+  return res.json({ ok: true, ...data });
 });
 
 /* ---------------- AI ---------------- */
@@ -377,16 +375,26 @@ router.post('/links/batch-move', async (req, res) => {
 async function fetchPageTitle(rawUrl: string): Promise<string | null> {
   try {
     assertPublicHttpUrl(rawUrl);
-    const response = await fetch(rawUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; nav-vue/1.0)',
-        Accept: 'text/html,application/xhtml+xml',
+    const response = await fetchPublic(
+      rawUrl,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; nav-vue/1.0)',
+          Accept: 'text/html,application/xhtml+xml',
+        },
+        signal: AbortSignal.timeout(8000),
       },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!response.ok) return null;
+      3,
+    );
+    if (!response.ok) {
+      await response.body?.cancel();
+      return null;
+    }
     const contentType = response.headers.get('content-type') || '';
-    if (contentType && !/text\/html|application\/xhtml/i.test(contentType)) return null;
+    if (contentType && !/text\/html|application\/xhtml/i.test(contentType)) {
+      await response.body?.cancel();
+      return null;
+    }
     const reader = response.body?.getReader();
     if (!reader) return null;
     const decoder = new TextDecoder();
@@ -396,8 +404,9 @@ async function fetchPageTitle(rawUrl: string): Promise<string | null> {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      total += value.byteLength;
-      text += decoder.decode(value, { stream: true });
+      const chunk = value.subarray(0, MAX_BYTES - total);
+      total += chunk.byteLength;
+      text += decoder.decode(chunk, { stream: true });
       if (text.toLowerCase().includes('</title>') || total >= MAX_BYTES) {
         await reader.cancel().catch(() => {});
         break;
@@ -429,7 +438,7 @@ router.post('/ai-describe', async (req, res) => {
   const url = String(req.body?.url ?? '').trim();
   if (!url) return res.status(400).json({ error: '请先填写网站 URL' });
   try {
-    new URL(url);
+    assertHttpUrl(url);
   } catch {
     return res.status(400).json({ error: 'URL 格式不正确' });
   }
@@ -439,7 +448,10 @@ router.post('/ai-describe', async (req, res) => {
     if (!resolvedTitle) {
       resolvedTitle = (await fetchPageTitle(url)) || new URL(url).hostname.replace(/^www\./, '');
     }
-    const description = await callChatCompletions(`网站名称：${resolvedTitle}\n网站地址：${url}\n请用一句话（50 字以内）介绍这个网站是做什么的、适合谁用。`, 200);
+    const description = await callChatCompletions(
+      `网站名称：${resolvedTitle}\n网站地址：${url}\n请用一句话（50 字以内）介绍这个网站是做什么的、适合谁用。`,
+      200,
+    );
     res.json({ title: resolvedTitle, description });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'AI 生成失败' });
@@ -459,15 +471,20 @@ router.get('/ai-config', async (_req, res) => {
 
 /** 保存 AI 配置：apiKey 为空时保留原值（不覆盖） */
 router.put('/ai-config', async (req, res) => {
-  const apiBase = String(req.body?.apiBase ?? '').trim().replace(/\/+$/, '');
+  const apiBase = String(req.body?.apiBase ?? '')
+    .trim()
+    .replace(/\/+$/, '');
   const model = String(req.body?.model ?? '').trim();
   const apiKey = String(req.body?.apiKey ?? '').trim();
   if (!apiBase) return res.status(400).json({ error: '请填写 API 地址' });
-  if (!/^https?:\/\//i.test(apiBase)) return res.status(400).json({ error: 'API 地址须以 http:// 或 https:// 开头' });
+  if (!/^https?:\/\//i.test(apiBase))
+    return res.status(400).json({ error: 'API 地址须以 http:// 或 https:// 开头' });
   try {
     assertPublicHttpUrl(apiBase);
   } catch (error) {
-    return res.status(400).json({ error: error instanceof Error ? error.message : 'API 地址不正确' });
+    return res
+      .status(400)
+      .json({ error: error instanceof Error ? error.message : 'API 地址不正确' });
   }
   if (!model) return res.status(400).json({ error: '请选择模型' });
   try {
@@ -477,7 +494,9 @@ router.put('/ai-config', async (req, res) => {
       { key: AI_MODEL_KEY, value: model, updated_at: now },
     ];
     if (apiKey) rows.push({ key: AI_API_KEY_KEY, value: apiKey, updated_at: now });
-    const { error } = await createServiceClient().from('app_config').upsert(rows, { onConflict: 'key' });
+    const { error } = await createServiceClient()
+      .from('app_config')
+      .upsert(rows, { onConflict: 'key' });
     if (error) throw error;
     res.json({ ok: true });
   } catch (error) {
@@ -500,43 +519,46 @@ router.post('/ai-test', async (_req, res) => {
 router.post('/ai-models', async (req, res) => {
   try {
     const stored = await readAiCredentials();
-    const apiBase = String(req.body?.apiBase ?? '').trim().replace(/\/+$/, '') || stored.apiBase;
+    const apiBase =
+      String(req.body?.apiBase ?? '')
+        .trim()
+        .replace(/\/+$/, '') || stored.apiBase;
     const apiKey = String(req.body?.apiKey ?? '').trim() || stored.apiKey;
     if (!apiBase) return res.status(400).json({ error: '请先填写 API 地址' });
-    if (!/^https?:\/\//i.test(apiBase)) return res.status(400).json({ error: 'API 地址须以 http:// 或 https:// 开头' });
+    if (!/^https?:\/\//i.test(apiBase))
+      return res.status(400).json({ error: 'API 地址须以 http:// 或 https:// 开头' });
     try {
       assertPublicHttpUrl(apiBase);
     } catch (error) {
-      return res.status(400).json({ error: error instanceof Error ? error.message : 'API 地址不正确' });
+      return res
+        .status(400)
+        .json({ error: error instanceof Error ? error.message : 'API 地址不正确' });
     }
     if (!apiKey) return res.status(400).json({ error: '请先填写 API Key' });
 
     let response: Response;
     try {
-      response = await fetch(`${apiBase}/models`, {
+      response = await fetchPublic(`${apiBase}/models`, {
         headers: { Authorization: `Bearer ${apiKey}` },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(8000),
       });
     } catch {
-      return res.status(500).json({ error: '无法连接到 API 地址（网络不通或超时），请检查地址是否正确' });
+      return res
+        .status(500)
+        .json({ error: '无法连接到 API 地址（网络不通或超时），请检查地址是否正确' });
     }
     if (!response.ok) {
       await response.body?.cancel().catch(() => {});
       if (response.status === 401 || response.status === 403) {
-        return res.status(500).json({ error: 'API Key 无效或无权限（401/403），请检查 Key 是否正确' });
+        return res
+          .status(500)
+          .json({ error: 'API Key 无效或无权限（401/403），请检查 Key 是否正确' });
       }
-      return res.status(500).json({ error: `获取模型列表失败（${response.status}）：请检查 API 地址和 Key 是否正确` });
+      return res
+        .status(500)
+        .json({ error: `获取模型列表失败（${response.status}）：请检查 API 地址和 Key 是否正确` });
     }
-    const text = await response.text();
-    if (text.length > 1_000_000) {
-      return res.status(500).json({ error: '接口返回数据过大，疑似中转异常' });
-    }
-    let data: { data?: Array<{ id?: string }> } | null = null;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = null;
-    }
+    const data = (await readJsonBounded(response)) as { data?: Array<{ id?: string }> } | null;
     const ids = (data?.data || [])
       .map((m) => m?.id)
       .filter((id): id is string => typeof id === 'string' && id.length > 0);
@@ -577,7 +599,10 @@ router.put('/unlock-phrase', async (req, res) => {
   try {
     const { error } = await createServiceClient()
       .from('app_config')
-      .upsert({ key: UNLOCK_PHRASE_KEY, value: phrase, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      .upsert(
+        { key: UNLOCK_PHRASE_KEY, value: phrase, updated_at: new Date().toISOString() },
+        { onConflict: 'key' },
+      );
     if (error) throw error;
     res.json({ ok: true });
   } catch (error) {
@@ -588,119 +613,87 @@ router.put('/unlock-phrase', async (req, res) => {
 
 /* ---------------- 账号安全 ---------------- */
 
-/** 当前管理员的邮箱与用户名（会话校验后返回） */
-router.get('/account', async (req: AdminRequest, res) => {
-  try {
-    const sessionEmail = verifyAdminToken(req.cookies?.[ADMIN_COOKIE_NAME]);
-    if (!sessionEmail) return res.json({ email: '', username: '' });
-    const dbEmail = await getDbAdminEmail();
-    if (!dbEmail || sessionEmail.toLowerCase() !== dbEmail.toLowerCase()) {
-      return res.json({ email: '', username: '' });
-    }
-    res.json({ email: dbEmail, username: await getDbAdminUsername() });
-  } catch (error) {
-    console.error('GET /api/admin/account failed:', error);
-    res.status(500).json({ error: '读取账号信息失败' });
-  }
+/** Already validated by requireAdmin: reuse the identity instead of querying it again. */
+router.get('/account', (req: AdminRequest, res) => {
+  const identity = req.adminIdentity!;
+  res.json({ email: identity.email, username: identity.username });
 });
 
-interface AdminIdentity {
-  ok: boolean;
-  error?: string;
-  userId?: string;
-  dbEmail?: string;
-}
-
-/** 管理员身份双校验：会话 Cookie 有效 + 当前密码正确 */
-async function verifyAdminIdentity(req: AdminRequest, currentPassword: string): Promise<AdminIdentity> {
-  if (!currentPassword) {
-    return { ok: false, error: '请输入当前密码以确认身份' };
-  }
-  const sessionEmail = verifyAdminToken(req.cookies?.[ADMIN_COOKIE_NAME]);
-  if (!sessionEmail) {
-    return { ok: false, error: '登录已过期，请重新登录后再试' };
-  }
-  const dbEmail = (await getDbAdminEmail()).toLowerCase();
-  if (!dbEmail || sessionEmail.toLowerCase() !== dbEmail) {
-    return { ok: false, error: '管理员身份校验失败' };
-  }
-  const { data, error } = await createAnonClient().auth.signInWithPassword({ email: dbEmail, password: currentPassword });
-  if (error || !data.user) {
-    return { ok: false, error: '当前密码不正确' };
-  }
-  return { ok: true, userId: data.user.id, dbEmail };
-}
-
-/** 一次改完：用户名 / 邮箱 / 密码（只改动与当前不同的项），身份只校验一次 */
+/** Auth and public config use separate services: compensate any failed second write. */
 router.put('/account/profile', async (req: AdminRequest, res) => {
-  try {
-    const username = String(req.body?.username ?? '').trim();
-    const cleanEmail = String(req.body?.newEmail ?? '').trim().toLowerCase();
-    const cleanPassword = String(req.body?.newPassword ?? '');
-    const currentPassword = String(req.body?.currentPassword ?? '');
-
-    if (username && !USERNAME_RE.test(username)) {
-      return res.status(400).json({ ok: false, error: '用户名为 2–32 位，可用字母、数字、下划线、连字符、中文' });
-    }
-    if (cleanEmail && !EMAIL_RE.test(cleanEmail)) {
-      return res.status(400).json({ ok: false, error: '新邮箱格式不正确' });
-    }
-    if (cleanPassword && cleanPassword.length < 8) {
-      return res.status(400).json({ ok: false, error: '新密码至少 8 位' });
-    }
-
-    const identity = await verifyAdminIdentity(req, currentPassword);
-    if (!identity.ok) return res.status(401).json({ ok: false, error: identity.error });
-    const { userId, dbEmail } = identity as { userId: string; dbEmail: string };
-    const dbUsername = await getDbAdminUsername();
-
-    const wantUsername = username !== dbUsername;
-    const wantEmail = !!cleanEmail && cleanEmail !== dbEmail;
-    const wantPassword = !!cleanPassword;
-    if (!wantUsername && !wantEmail && !wantPassword) {
-      return res.status(400).json({ ok: false, error: '没有要修改的内容' });
-    }
-
-    const svc = createServiceClient();
-
-    if (wantUsername) {
-      await setDbAdminUsername(username); // 留空即清除，恢复为仅邮箱登录
-    }
-
-    if (wantEmail) {
-      const { error: emailError } = await svc.auth.admin.updateUserById(userId, {
-        email: cleanEmail,
-        email_confirm: true,
-      });
-      if (emailError) {
-        return res.status(500).json({ ok: false, error: '邮箱修改失败：' + emailError.message });
-      }
-      const { error: dbError } = await svc
-        .from('app_config')
-        .upsert({ key: ADMIN_EMAIL_KEY, value: cleanEmail }, { onConflict: 'key' });
-      if (dbError) {
-        await svc.auth.admin.updateUserById(userId, { email: dbEmail, email_confirm: true });
-        return res.status(500).json({ ok: false, error: '邮箱修改失败（数据未保持一致），请重试' });
-      }
-      res.cookie(ADMIN_COOKIE_NAME, signAdminToken(cleanEmail), adminCookieOptions());
-    }
-
-    if (wantPassword) {
-      const { error: pwError } = await svc.auth.admin.updateUserById(userId, { password: cleanPassword });
-      if (pwError) {
-        return res.status(500).json({ ok: false, error: '密码修改失败：' + pwError.message });
-      }
-    }
-
-    const changed: string[] = [];
-    if (wantUsername) changed.push(username ? '用户名' : '用户名（已清除）');
-    if (wantEmail) changed.push('邮箱');
-    if (wantPassword) changed.push('密码');
-    res.json({ ok: true, emailChanged: wantEmail, changed });
-  } catch (error) {
-    console.error('PUT /api/admin/account/profile failed:', error);
-    res.status(500).json({ ok: false, error: '修改失败，请稍后重试' });
+  const identity = req.adminIdentity!;
+  const username = String(req.body?.username ?? '').trim();
+  const newEmail =
+    String(req.body?.newEmail ?? '')
+      .trim()
+      .toLowerCase() || identity.email;
+  const newPassword = String(req.body?.newPassword ?? '');
+  const currentPassword = String(req.body?.currentPassword ?? '');
+  if (username && !USERNAME_RE.test(username))
+    return res.status(400).json({ error: '用户名格式不正确' });
+  if (!EMAIL_RE.test(newEmail) || (newPassword && newPassword.length < 8))
+    return res.status(400).json({ error: '邮箱格式不正确或新密码不足 8 位' });
+  if (!currentPassword) return res.status(400).json({ error: '请输入当前密码' });
+  const wantEmail = newEmail.toLowerCase() !== identity.email.toLowerCase();
+  const wantPassword = !!newPassword;
+  const wantUsername = username !== identity.username;
+  if (!wantEmail && !wantPassword && !wantUsername)
+    return res.status(400).json({ error: '没有要修改的内容' });
+  if (await isRateLimitedDb('account:' + getClientIp(req), 10, 600000))
+    return res.status(429).json({ error: '尝试次数过多，请稍后再试' });
+  const { data: auth, error: authError } = await createAnonClient().auth.signInWithPassword({
+    email: identity.email,
+    password: currentPassword,
+  });
+  if (authError || !auth.user) return res.status(401).json({ error: '当前密码不正确' });
+  const svc = createServiceClient();
+  // Compare-and-swap rejects concurrent updates and revokes existing sessions before any Auth change.
+  const interimVersion = randomUUID();
+  const { data: claimed, error: claimError } = await svc.rpc('begin_admin_account_change', {
+    p_expected_version: identity.sessionVersion,
+    p_new_version: interimVersion,
+  });
+  if (claimError) return res.status(503).json({ error: '无法更新会话状态，账号未修改' });
+  if (!claimed) return res.status(409).json({ error: '账号已被修改，请重新登录' });
+  res.clearCookie(ADMIN_COOKIE_NAME, { path: '/' });
+  const userId = auth.user.id;
+  if (wantEmail || wantPassword) {
+    const { error } = await svc.auth.admin.updateUserById(userId, {
+      ...(wantEmail ? { email: newEmail, email_confirm: true } : {}),
+      ...(wantPassword ? { password: newPassword } : {}),
+    });
+    if (error) return res.status(500).json({ error: '账号修改失败，请重新登录并核对资料后重试' });
   }
+  // Revoke sessions created during the Auth request as well.
+  const finalVersion = randomUUID();
+  const { error: configError } = await svc.from('app_config').upsert(
+    [
+      { key: ADMIN_EMAIL_KEY, value: newEmail },
+      { key: ADMIN_USERNAME_KEY, value: username },
+      { key: ADMIN_SESSION_VERSION_KEY, value: finalVersion },
+    ],
+    { onConflict: 'key' },
+  );
+  if (configError) {
+    if (wantEmail || wantPassword) {
+      const { error: rollbackError } = await svc.auth.admin.updateUserById(userId, {
+        ...(wantEmail ? { email: identity.email, email_confirm: true } : {}),
+        ...(wantPassword ? { password: currentPassword } : {}),
+      });
+      if (rollbackError)
+        return res.status(500).json({
+          partial: true,
+          error:
+            '认证账号已修改，但站点配置保存及回滚失败。请使用 Supabase 控制台核对账号，避免重复提交。',
+        });
+    }
+    return res.status(500).json({ error: '配置保存失败，账号资料已还原，请重新登录后重试' });
+  }
+  res.cookie(ADMIN_COOKIE_NAME, signAdminToken(newEmail, finalVersion), adminCookieOptions());
+  const changed = [wantUsername && '用户名', wantEmail && '邮箱', wantPassword && '密码'].filter(
+    Boolean,
+  );
+  res.json({ ok: true, emailChanged: wantEmail, changed });
 });
 
 export default router;

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-background: var(--background);
@@ -33,7 +33,12 @@ body {
   overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
-  font-family: Inter, 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  font-family:
+    Inter,
+    'Noto Sans SC',
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 /* 自定义滚动条 */
@@ -125,12 +130,22 @@ html {
 }
 /* 列表行入场：轻微上浮淡入，配合行内 animation-delay 形成级联 */
 @keyframes row-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.anim-row { animation: row-in 0.38s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.anim-row {
+  animation: row-in 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
 @media (prefers-reduced-motion: reduce) {
-  .anim-row { animation: none; }
+  .anim-row {
+    animation: none;
+  }
 }
 
 /* iOS 点按反馈：Tailwind preflight 把 -webkit-tap-highlight-color 全局置透明了，

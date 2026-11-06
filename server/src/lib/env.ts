@@ -5,13 +5,13 @@
  */
 export const env = {
   supabaseUrl: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  supabaseAnonKey:
-    process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   sessionSecret: process.env.ADMIN_SESSION_SECRET || '',
   setupToken: (process.env.SETUP_TOKEN || '').trim(),
   submitPassword: process.env.SUBMIT_PASSWORD || '',
   port: Number(process.env.PORT ?? 3001),
   isProd: process.env.NODE_ENV === 'production',
-  isDev: process.env.NODE_ENV !== 'production',
+  siteUrl: process.env.SITE_URL || '',
+  trustProxy: process.env.TRUST_PROXY || (process.env.VERCEL ? 1 : false),
 };

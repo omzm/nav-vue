@@ -25,7 +25,15 @@
                 aria-label="关闭"
                 @click="onClose"
               >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <svg
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
                   <path d="M18 6 6 18M6 6l12 12" />
                 </svg>
               </button>
@@ -47,23 +55,53 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onUnmounted, ref, watch } from 'vue';
 
 const props = withDefaults(defineProps<{ open: boolean; title: string; wide?: boolean }>(), {
   wide: false,
-})
-const emit = defineEmits<{ close: [] }>()
+});
+const emit = defineEmits<{ close: [] }>();
 
-const panelRef = ref<HTMLElement | null>(null)
-let lastFocused: HTMLElement | null = null
+const panelRef = ref<HTMLElement | null>(null);
+let lastFocused: HTMLElement | null = null;
 
 function onClose() {
-  if (!props.open) return
-  emit('close')
+  if (!props.open) return;
+  emit('close');
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') onClose()
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    onClose();
+    return;
+  }
+  if (e.key !== 'Tab' || !panelRef.value) return;
+  const items = Array.from(
+    panelRef.value.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((item) => item.getClientRects().length > 0 && item.tabIndex >= 0);
+  const first = items[0],
+    last = items[items.length - 1];
+  if (!first) {
+    e.preventDefault();
+    panelRef.value.focus();
+    return;
+  }
+  if (
+    e.shiftKey &&
+    (document.activeElement === first || !items.includes(document.activeElement as HTMLElement))
+  ) {
+    e.preventDefault();
+    last.focus();
+  } else if (
+    !e.shiftKey &&
+    (document.activeElement === last || !items.includes(document.activeElement as HTMLElement))
+  ) {
+    e.preventDefault();
+    first.focus();
+  }
 }
 
 watch(
@@ -71,26 +109,27 @@ watch(
   (open) => {
     if (open) {
       // 记住之前的焦点，关闭时还原；打开后把焦点移到弹窗内
-      lastFocused = document.activeElement as HTMLElement | null
-      document.addEventListener('keydown', onKeydown)
+      lastFocused = document.activeElement as HTMLElement | null;
+      document.addEventListener('keydown', onKeydown);
       nextTick(() => {
         const focusable = panelRef.value?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        ;(focusable ?? panelRef.value)?.focus()
-      })
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        (focusable ?? panelRef.value)?.focus();
+      });
     } else {
-      document.removeEventListener('keydown', onKeydown)
-      lastFocused?.focus?.()
-      lastFocused = null
+      document.removeEventListener('keydown', onKeydown);
+      lastFocused?.focus?.();
+      lastFocused = null;
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', onKeydown)
-})
+  document.removeEventListener('keydown', onKeydown);
+  if (lastFocused?.isConnected) lastFocused.focus();
+});
 </script>
 
 <style scoped>

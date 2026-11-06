@@ -1,5 +1,7 @@
 <template>
   <input
+    :id="field?.id"
+    :aria-describedby="field?.hintId"
     type="number"
     :value="modelValue"
     :min="min"
@@ -11,10 +13,12 @@
 </template>
 
 <script setup lang="ts">
+import { useField } from '@/composables/useField';
+const field = useField();
 withDefaults(
   defineProps<{ modelValue: number; min?: number; step?: number; disabled?: boolean }>(),
-  { min: 0, step: 1, disabled: false }
-)
+  { min: 0, step: 1, disabled: false },
+);
 
-defineEmits<{ 'update:modelValue': [value: number] }>()
+defineEmits<{ 'update:modelValue': [value: number] }>();
 </script>

@@ -40,19 +40,9 @@ export function isRateLimited(key: string, limit: number, windowMs = 60_000): bo
   return false;
 }
 
-export function getClientIp(req: { headers: Record<string, string | string[] | undefined>; ip?: string }): string {
-  // Express 已配 trust proxy，req.ip 是去掉可信代理跳数后的真实客户端 IP，不可伪造，优先用它
+export function getClientIp(req: { ip?: string; socket?: { remoteAddress?: string } }): string {
+  // req.ip obeys the explicit trust-proxy setting. Never parse untrusted forwarding headers.
   if (req.ip) return req.ip;
-  const realIp = req.headers['x-real-ip'];
-  if (typeof realIp === 'string' && realIp) return realIp;
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded) {
-    // 兜底解析：取最右可信段（最左段是客户端自称的，可伪造，不能用）
-    const parts = forwarded
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (parts.length > 0) return parts[parts.length - 1];
-  }
+  if (req.socket?.remoteAddress) return req.socket.remoteAddress;
   return 'unknown';
 }

@@ -1,3 +1,4 @@
+import './load-env.mjs';
 // 部署时检查数据库变更：在生产启动之前跑完（npm run migrate）。
 //
 // 声明式：supabase/schema.sql 是幂等的结构声明。通过 SHA-256 记录文件内容，
@@ -13,7 +14,7 @@
 // （正则只能防误写，不能防恶意提交，真正的防线是 PR review），
 // 命中直接中断构建。
 //
-// 没有配 DATABASE_URL 时直接跳过（比如本地开发），不报错。
+// 本地缺少 DATABASE_URL 可跳过；生产必须失败，避免部署与数据库不一致。
 // 失败则退出码为 1，中断部署，避免代码上线了表结构没跟上。
 
 import { readdir, readFile } from 'node:fs/promises';
@@ -27,24 +28,22 @@ const migrationsDir = join(root, 'supabase', 'migrations');
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.log('[migrate] 未配置 DATABASE_URL，跳过数据库迁移');
+  const migrateEnv = process.env.MIGRATE_ENV || process.env.VERCEL_ENV;
+  if (migrateEnv && migrateEnv !== 'production') {
+    console.log('[migrate] 非生产部署，跳过数据库同步');
     return;
   }
-
+  const production = migrateEnv === 'production' || process.env.NODE_ENV === 'production';
+  if (!databaseUrl) {
+    if (production) throw new Error('生产迁移必须配置 DATABASE_URL');
+    console.log('[migrate] 未配置 DATABASE_URL，跳过本地迁移');
+    return;
+  }
   const client = new pg.Client({
     connectionString: databaseUrl,
-    // Supabase 用公共 CA 签发证书，开启校验防迁移链路被中间人劫持
+    connectionTimeoutMillis: 10000,
     ssl: { rejectUnauthorized: true },
   });
-
-  // 只允许 production 执行：MIGRATE_ENV=preview/staging 时一律跳过，避免非生产构建改动生产库；
-  // 本地（MIGRATE_ENV 未设置）仍可手动执行，用于开发调试
-  const migrateEnv = process.env.MIGRATE_ENV;
-  if (migrateEnv && migrateEnv !== 'production') {
-    console.log(`[migrate] ${migrateEnv} 环境，跳过数据库同步（只在 production 执行）`);
-    return;
-  }
 
   try {
     await client.connect();
@@ -52,7 +51,7 @@ async function main() {
     // 生产部署：连不上库必须中断。代码与 schema 强耦合（RLS/is_admin()），
     // 放行会导致"新代码 + 旧数据库"上线；中断后旧版本继续服务。
     // 本地则只告警，方便无库开发。
-    if (process.env.MIGRATE_ENV === 'production') {
+    if (production) {
       throw err;
     }
     console.warn('[migrate] 数据库连接失败，跳过结构同步，不中断构建：', err.message);
@@ -66,94 +65,95 @@ async function main() {
     await client.query('select pg_advisory_lock(hashtext($1))', [lockKey]);
 
     try {
-    await client.query(`
+      await client.query(`
       create table if not exists schema_migrations (
         name text primary key,
         applied_at timestamptz default now()
       )
     `);
 
-    // schema_migrations 位于 public schema，必须启用 RLS（不建 policy，
-    // 仅 postgres / service_role 可访问）；否则任何人拿 anon key 即可公开读写，
-    // Supabase 会报 rls_disabled_in_public 严重告警。幂等，重复执行无副作用。
-    await client.query('alter table schema_migrations enable row level security');
+      // schema_migrations 位于 public schema，必须启用 RLS（不建 policy，
+      // 仅 postgres / service_role 可访问）；否则任何人拿 anon key 即可公开读写，
+      // Supabase 会报 rls_disabled_in_public 严重告警。幂等，重复执行无副作用。
+      await client.query('alter table schema_migrations enable row level security');
 
-    // 1. 声明式结构同步：仅首次执行或 schema.sql 内容变化时执行。
-    // 将 SHA-256 哈希记录在现有 schema_migrations 表，避免新增状态表。
-    const schemaSql = await readFile(join(root, 'supabase', 'schema.sql'), 'utf8');
+      // 1. 声明式结构同步：仅首次执行或 schema.sql 内容变化时执行。
+      // 将 SHA-256 哈希记录在现有 schema_migrations 表，避免新增状态表。
+      const schemaSql = await readFile(join(root, 'supabase', 'schema.sql'), 'utf8');
 
-    // 安全检查（冒烟检查，防误写不防恶意）：结构声明里不允许删表/删列/清空表/无条件删数据
-    if (
-      /(^|\n)\s*drop\s+(table|schema)\s/i.test(schemaSql) ||
-      /(^|\n)\s*truncate(\s+table)?\s/i.test(schemaSql) ||
-      /(^|\n)\s*alter\s+table\s+\w+\s+drop\s+column\s/i.test(schemaSql) ||
-      /(^|\n)\s*delete\s+from\s+\w+\s*;/i.test(schemaSql)
-    ) {
-      throw new Error('schema.sql 中禁止出现 DROP TABLE/SCHEMA / TRUNCATE / DROP COLUMN / 无条件 DELETE，请改用 migration 文件处理');
-    }
-
-    const schemaHash = createHash('sha256').update(schemaSql).digest('hex');
-    const schemaHashRecord = `schema.sql:${schemaHash}`;
-    const { rows: schemaHashRows } = await client.query(
-      "select name from schema_migrations where name like 'schema.sql:%' order by applied_at desc limit 1"
-    );
-
-    if (schemaHashRows[0]?.name === schemaHashRecord) {
-      console.log('[migrate] schema.sql 未变化，跳过结构同步');
-    } else {
-      // schema.sql 用到 pg_cron 做定时清理，仅在需要同步结构时确保扩展存在。
-      await client.query('create extension if not exists pg_cron');
-      console.log('[migrate] 首次同步或 schema.sql 已变化，执行结构同步');
-      await client.query('begin');
-      try {
-        await client.query(schemaSql);
-        await client.query("delete from schema_migrations where name like 'schema.sql:%'");
-        await client.query(
-          'insert into schema_migrations (name) values ($1)',
-          [schemaHashRecord]
+      // 安全检查（冒烟检查，防误写不防恶意）：结构声明里不允许删表/删列/清空表/无条件删数据
+      if (
+        /(^|\n)\s*drop\s+(table|schema)\s/i.test(schemaSql) ||
+        /(^|\n)\s*truncate(\s+table)?\s/i.test(schemaSql) ||
+        /(^|\n)\s*alter\s+table\s+\w+\s+drop\s+column\s/i.test(schemaSql) ||
+        /(^|\n)\s*delete\s+from\s+\w+\s*;/i.test(schemaSql)
+      ) {
+        throw new Error(
+          'schema.sql 中禁止出现 DROP TABLE/SCHEMA / TRUNCATE / DROP COLUMN / 无条件 DELETE，请改用 migration 文件处理',
         );
-        await client.query('commit');
-        console.log('[migrate] 表结构同步完成');
-      } catch (err) {
-        await client.query('rollback');
-        throw err;
       }
-    }
 
-    // 2. 数据迁移：supabase/migrations 下未应用过的 SQL 各跑一次
-    const { rows } = await client.query('select name from schema_migrations');
-    const applied = new Set(rows.map((r) => r.name));
+      const schemaHash = createHash('sha256').update(schemaSql).digest('hex');
+      const schemaHashRecord = `schema.sql:${schemaHash}`;
+      const { rows: schemaHashRows } = await client.query(
+        "select name from schema_migrations where name like 'schema.sql:%' order by applied_at desc limit 1",
+      );
 
-    let files = [];
-    try {
-      files = (await readdir(migrationsDir))
-        .filter((f) => f.endsWith('.sql') && !f.endsWith('_rollback.sql'))
-        .sort();
-    } catch (err) {
-      // migrations 目录不存在 → 视为无待应用迁移
-      if (err.code !== 'ENOENT') throw err;
-    }
-    const pending = files.filter((f) => !applied.has(f.replace(/\.sql$/, '')));
-
-    if (pending.length === 0) {
-      console.log('[migrate] 没有待应用的数据迁移');
-    } else {
-      for (const file of pending) {
-        const name = file.replace(/\.sql$/, '');
-        const sql = await readFile(join(migrationsDir, file), 'utf8');
-        console.log(`[migrate] 应用数据迁移：${file}`);
+      if (schemaHashRows[0]?.name === schemaHashRecord) {
+        console.log('[migrate] schema.sql 未变化，跳过结构同步');
+      } else {
+        // schema.sql 用到 pg_cron 做定时清理，仅在需要同步结构时确保扩展存在。
+        await client.query('create extension if not exists pg_cron');
+        console.log('[migrate] 首次同步或 schema.sql 已变化，执行结构同步');
         await client.query('begin');
         try {
-          await client.query(sql);
-          await client.query('insert into schema_migrations (name) values ($1)', [name]);
+          await client.query(schemaSql);
+          await client.query("delete from schema_migrations where name like 'schema.sql:%'");
+          await client.query('insert into schema_migrations (name) values ($1)', [
+            schemaHashRecord,
+          ]);
           await client.query('commit');
-          console.log(`[migrate] 完成：${file}`);
+          console.log('[migrate] 表结构同步完成');
         } catch (err) {
           await client.query('rollback');
           throw err;
         }
       }
-    }
+
+      // 2. 数据迁移：supabase/migrations 下未应用过的 SQL 各跑一次
+      const { rows } = await client.query('select name from schema_migrations');
+      const applied = new Set(rows.map((r) => r.name));
+
+      let files = [];
+      try {
+        files = (await readdir(migrationsDir))
+          .filter((f) => f.endsWith('.sql') && !f.endsWith('_rollback.sql'))
+          .sort();
+      } catch (err) {
+        // migrations 目录不存在 → 视为无待应用迁移
+        if (err.code !== 'ENOENT') throw err;
+      }
+      const pending = files.filter((f) => !applied.has(f.replace(/\.sql$/, '')));
+
+      if (pending.length === 0) {
+        console.log('[migrate] 没有待应用的数据迁移');
+      } else {
+        for (const file of pending) {
+          const name = file.replace(/\.sql$/, '');
+          const sql = await readFile(join(migrationsDir, file), 'utf8');
+          console.log(`[migrate] 应用数据迁移：${file}`);
+          await client.query('begin');
+          try {
+            await client.query(sql);
+            await client.query('insert into schema_migrations (name) values ($1)', [name]);
+            await client.query('commit');
+            console.log(`[migrate] 完成：${file}`);
+          } catch (err) {
+            await client.query('rollback');
+            throw err;
+          }
+        }
+      }
     } finally {
       // 释放 advisory lock（会话断开也会自动释放，这里显式处理）
       try {

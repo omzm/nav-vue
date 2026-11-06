@@ -11,8 +11,7 @@ interface AuthStatus {
  * 管理员刷新：刷新按钮仅管理员可见（公开刷新可被滥用打穿缓存）。
  *
  * 性能优化：会话查询延迟到浏览器空闲时执行（避开首屏关键路径），结果缓存到
- * sessionStorage，同一标签页会话内只查一次。注意登出不会清这个 hint，
- * 但刷新操作本身有服务端鉴权，最坏情况只是按钮多显示一次。
+ * sessionStorage，缓存仅用于先显示状态；每次挂载仍重新验证会话。
  *
  * @param reload 刷新成功后重新拉取首页快照的回调（替代 Next 版的 router.refresh）
  */
@@ -53,7 +52,6 @@ export function useAdminRefresh(reload: () => Promise<void> | void) {
       const cached = sessionStorage.getItem('nav_admin_hint');
       if (cached !== null) {
         resolve(cached === '1');
-        return;
       }
     } catch {
       // sessionStorage 不可用时降级为直接查询

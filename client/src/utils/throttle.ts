@@ -7,7 +7,7 @@
  */
 export function throttle<Args extends unknown[]>(
   func: (...args: Args) => void,
-  limit: number
+  limit: number,
 ): (...args: Args) => void {
   let inThrottle = false;
   let lastArgs: Args | null = null;

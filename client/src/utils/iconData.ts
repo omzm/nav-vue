@@ -6,12 +6,10 @@ const ICON_PATHS: Record<string, string> = {
   'icon-book':
     'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15.5A2.5 2.5 0 0 1 17.5 21H6.5A2.5 2.5 0 0 1 4 18.5v-13Zm3 0h10M7 9h8M7 13h6',
   'icon-chart': 'M4 19h16M7 16V9m5 7V5m5 11v-6',
-  'icon-cloud':
-    'M7 18h10.5a4.5 4.5 0 0 0 .7-8.95A6.5 6.5 0 0 0 5.7 10.4A3.9 3.9 0 0 0 7 18Z',
+  'icon-cloud': 'M7 18h10.5a4.5 4.5 0 0 0 .7-8.95A6.5 6.5 0 0 0 5.7 10.4A3.9 3.9 0 0 0 7 18Z',
   'icon-code': 'm8 9-4 3 4 3m8-6 4 3-4 3m-2-9-4 12',
   'icon-delete': 'M5 7h14m-9 4v6m4-6v6M8 7l1 13h6l1-13M10 7V4h4v3',
-  'icon-design':
-    'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z',
+  'icon-design': 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z',
   'icon-download': 'M12 3v11m0 0 4-4m-4 4-4-4M5 19h14',
   'icon-edit': 'M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Zm10-13 3 3',
   'icon-eye':
