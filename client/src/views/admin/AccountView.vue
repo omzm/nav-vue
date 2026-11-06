@@ -23,11 +23,7 @@
             label="登录用户名"
             hint="2–32 位，可用字母、数字、下划线、连字符、中文；留空则清除，恢复为仅邮箱登录"
           >
-            <TextInput
-              v-model="username"
-              placeholder="例如 admin"
-              autocomplete="username"
-            />
+            <TextInput v-model="username" placeholder="例如 admin" autocomplete="username" />
           </Field>
           <Field label="登录邮箱">
             <TextInput
@@ -70,54 +66,54 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { get, put } from '@/api/client'
-import { apiErrorMessage, toast } from '@/composables/useToast'
-import AppButton from '@/components/admin/AppButton.vue'
-import Card from '@/components/admin/Card.vue'
-import Field from '@/components/admin/Field.vue'
-import PageHeader from '@/components/admin/PageHeader.vue'
-import PasswordInput from '@/components/admin/PasswordInput.vue'
-import Spinner from '@/components/admin/Spinner.vue'
-import TextInput from '@/components/admin/TextInput.vue'
+import { onMounted, ref } from 'vue';
+import { get, put } from '@/api/client';
+import { apiErrorMessage, toast } from '@/composables/useToast';
+import AppButton from '@/components/admin/AppButton.vue';
+import Card from '@/components/admin/Card.vue';
+import Field from '@/components/admin/Field.vue';
+import PageHeader from '@/components/admin/PageHeader.vue';
+import PasswordInput from '@/components/admin/PasswordInput.vue';
+import Spinner from '@/components/admin/Spinner.vue';
+import TextInput from '@/components/admin/TextInput.vue';
 
-const currentEmail = ref('')
-const currentUsername = ref('')
-const loading = ref(true)
+const currentEmail = ref('');
+const currentUsername = ref('');
+const loading = ref(true);
 
-const username = ref('')
-const email = ref('')
-const newPassword = ref('')
-const confirmPassword = ref('')
-const currentPassword = ref('')
-const saving = ref(false)
+const username = ref('');
+const email = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const currentPassword = ref('');
+const saving = ref(false);
 
 async function loadAccount() {
-  loading.value = true
+  loading.value = true;
   try {
-    const account = await get<{ email: string; username: string }>('/admin/account')
-    currentEmail.value = account.email
-    currentUsername.value = account.username
+    const account = await get<{ email: string; username: string }>('/admin/account');
+    currentEmail.value = account.email;
+    currentUsername.value = account.username;
     // 表单预填当前值：用户直接改，空着不动的就是不改
-    username.value = account.username
-    email.value = account.email
+    username.value = account.username;
+    email.value = account.email;
   } catch (error) {
-    toast.error(apiErrorMessage(error, '加载账号信息失败'))
+    toast.error(apiErrorMessage(error, '加载账号信息失败'));
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function handleSave() {
   if (newPassword.value && newPassword.value.length < 8) {
-    toast.error('新密码至少 8 位')
-    return
+    toast.error('新密码至少 8 位');
+    return;
   }
   if (newPassword.value && newPassword.value !== confirmPassword.value) {
-    toast.error('两次输入的新密码不一致')
-    return
+    toast.error('两次输入的新密码不一致');
+    return;
   }
-  saving.value = true
+  saving.value = true;
   try {
     const result = await put<{ ok: boolean; emailChanged?: boolean; changed?: string[] }>(
       '/admin/account/profile',
@@ -126,27 +122,27 @@ async function handleSave() {
         username: username.value.trim(),
         newEmail: email.value.trim(),
         newPassword: newPassword.value,
-      }
-    )
+      },
+    );
     if (!result.ok) {
-      toast.error('保存失败')
-      return
+      toast.error('保存失败');
+      return;
     }
-    currentEmail.value = email.value.trim().toLowerCase()
-    currentUsername.value = username.value.trim()
-    newPassword.value = ''
-    confirmPassword.value = ''
-    currentPassword.value = ''
-    const changed = (result.changed || []).join('、')
-    toast.success(changed ? `已修改：${changed}` : '已保存')
+    currentEmail.value = email.value.trim().toLowerCase();
+    currentUsername.value = username.value.trim();
+    newPassword.value = '';
+    confirmPassword.value = '';
+    currentPassword.value = '';
+    const changed = (result.changed || []).join('、');
+    toast.success(changed ? `已修改：${changed}` : '已保存');
   } catch (error) {
-    toast.error(apiErrorMessage(error, '保存失败'))
+    toast.error(apiErrorMessage(error, '保存失败'));
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 
 onMounted(() => {
-  void loadAccount()
-})
+  void loadAccount();
+});
 </script>

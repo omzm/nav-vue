@@ -26,9 +26,14 @@
         >
           <span class="flex items-start justify-between gap-2">
             <span class="pt-[5px] text-[13.5px] font-medium text-slate-500">{{ card.label }}</span>
-            <span class="grid h-[34px] w-[34px] flex-none place-items-center rounded-full bg-white text-slate-700" v-html="card.icon" />
+            <span
+              class="grid h-[34px] w-[34px] flex-none place-items-center rounded-full bg-white text-slate-700"
+              v-html="card.icon"
+            />
           </span>
-          <span class="mt-2.5 block text-[31px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink tabular-nums">
+          <span
+            class="mt-2.5 block text-[31px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink tabular-nums"
+          >
             {{ card.value.toLocaleString('zh-CN') }}
           </span>
           <span class="mt-[3px] block text-xs text-slate-400">{{ card.caption }}</span>
@@ -40,11 +45,25 @@
         <Card body-class="px-2 pb-3 pt-1">
           <template #header>
             <div class="flex items-center gap-2 px-4 text-slate-500">
-              <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" />
+              <svg
+                class="h-[18px] w-[18px]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 7.5V12l3 2" />
               </svg>
               <h2 class="text-[14.5px] font-medium text-slate-700">最近添加</h2>
-              <button type="button" class="ml-auto text-[13px] font-medium text-slate-500 transition-colors touch-manipulation hover:text-ink active:opacity-60" @click="go('/admin/dashboard/links')">
+              <button
+                type="button"
+                class="ml-auto text-[13px] font-medium text-slate-500 transition-colors touch-manipulation hover:text-ink active:opacity-60"
+                @click="go('/admin/dashboard/links')"
+              >
                 全部链接
               </button>
             </div>
@@ -56,8 +75,12 @@
               class="anim-row flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/60"
               :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
             >
-              <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
-              <span class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl">
+              <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{
+                String(i + 1).padStart(2, '0')
+              }}</span>
+              <span
+                class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white p-2 text-xl"
+              >
                 <span class="flex h-full w-full items-center justify-center">
                   <LinkIcon :url="link.url" :icon="link.icon" />
                 </span>
@@ -69,8 +92,11 @@
                   rel="noopener noreferrer"
                   :title="link.title"
                   class="block truncate text-[15px] font-medium text-ink hover:underline"
-                >{{ link.title }}</a>
-                <span class="mt-px block truncate text-xs text-slate-500">{{ hostname(link.url) }}</span>
+                  >{{ link.title }}</a
+                >
+                <span class="mt-px block truncate text-xs text-slate-500">{{
+                  hostname(link.url)
+                }}</span>
               </div>
               <span class="flex-none text-sm text-slate-500">
                 {{ categoryMap.get(link.category_id)?.name || '未分类' }}
@@ -82,7 +108,16 @@
                 title="编辑链接"
                 @click="go('/admin/dashboard/link/' + link.id)"
               >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
                 </svg>
               </button>
@@ -103,11 +138,22 @@
         <Card body-class="px-2 pb-3 pt-1">
           <template #header>
             <div class="flex items-center gap-2 px-4 text-slate-500">
-              <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                class="h-[18px] w-[18px]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M4 19.5h16M7 16v-4m5 4V8m5 8v-6" />
               </svg>
               <h2 class="text-[14.5px] font-medium text-slate-700">分类分布</h2>
-              <span class="ml-auto text-[13px] text-slate-400 tabular-nums">{{ categories.length }}</span>
+              <span class="ml-auto text-[13px] text-slate-400 tabular-nums">{{
+                categories.length
+              }}</span>
             </div>
           </template>
           <div v-if="topCategories.length">
@@ -119,16 +165,28 @@
               :style="{ animationDelay: `${Math.min(i, 8) * 30}ms` }"
               @click="go('/admin/dashboard/links?category=' + category.id)"
             >
-              <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{ String(i + 1).padStart(2, '0') }}</span>
-              <span class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white text-slate-600">
+              <span class="w-[26px] flex-none text-sm font-medium text-rank tabular-nums">{{
+                String(i + 1).padStart(2, '0')
+              }}</span>
+              <span
+                class="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-full bg-white text-slate-600"
+              >
                 <CategoryIcon :icon="category.icon" class="h-[19px] w-[19px] text-[19px]" />
               </span>
               <span class="min-w-0 flex-1">
-                <span class="block truncate text-[15px] font-medium text-ink">{{ category.name }}</span>
-                <span class="mt-px block text-xs text-slate-500">{{ categoryCount(category.id) }} 个链接 · {{ category.is_private ? '私密' : '公开' }}</span>
+                <span class="block truncate text-[15px] font-medium text-ink">{{
+                  category.name
+                }}</span>
+                <span class="mt-px block text-xs text-slate-500"
+                  >{{ categoryCount(category.id) }} 个链接 ·
+                  {{ category.is_private ? '私密' : '公开' }}</span
+                >
               </span>
               <span class="flex-none text-right">
-                <span class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums">{{ categoryCount(category.id) }}</span>
+                <span
+                  class="block text-[19px] font-semibold leading-[1.15] text-ink tabular-nums"
+                  >{{ categoryCount(category.id) }}</span
+                >
                 <span class="text-[11px] text-slate-400">链接</span>
               </span>
             </button>
@@ -155,47 +213,52 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { get } from '@/api/client'
-import { exportBookmarks, exportData, loadAdminData, useAdminData } from '@/composables/useAdminData'
-import { getHostname as hostname } from '@/utils/icons'
-import AppButton from '@/components/admin/AppButton.vue'
-import Card from '@/components/admin/Card.vue'
-import CategoryIcon from '@/components/admin/CategoryIcon.vue'
-import EmptyState from '@/components/admin/EmptyState.vue'
-import LinkIcon from '@/components/admin/LinkIcon.vue'
-import Spinner from '@/components/admin/Spinner.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { get } from '@/api/client';
+import {
+  exportBookmarks,
+  exportData,
+  loadAdminData,
+  useAdminData,
+} from '@/composables/useAdminData';
+import { getHostname as hostname } from '@/utils/icons';
+import AppButton from '@/components/admin/AppButton.vue';
+import Card from '@/components/admin/Card.vue';
+import CategoryIcon from '@/components/admin/CategoryIcon.vue';
+import EmptyState from '@/components/admin/EmptyState.vue';
+import LinkIcon from '@/components/admin/LinkIcon.vue';
+import Spinner from '@/components/admin/Spinner.vue';
 
-const router = useRouter()
+const router = useRouter();
 const { categories, links, loading, categoryMap, linkCountByCategory, stats, loadData } =
-  useAdminData()
+  useAdminData();
 
-const go = (path: string) => router.push(path)
+const go = (path: string) => router.push(path);
 
-const displayName = ref('')
+const displayName = ref('');
 const greeting = computed(() => {
-  const h = new Date().getHours()
-  if (h < 6) return '夜深了'
-  if (h < 12) return '上午好'
-  if (h < 14) return '中午好'
-  if (h < 19) return '下午好'
-  return '晚上好'
-})
+  const h = new Date().getHours();
+  if (h < 6) return '夜深了';
+  if (h < 12) return '上午好';
+  if (h < 14) return '中午好';
+  if (h < 19) return '下午好';
+  return '晚上好';
+});
 
 async function loadDisplayName() {
   try {
-    const account = await get<{ email: string; username: string }>('/admin/account')
-    displayName.value = account.username || (account.email || '').split('@')[0] || ''
+    const account = await get<{ email: string; username: string }>('/admin/account');
+    displayName.value = account.username || (account.email || '').split('@')[0] || '';
   } catch {
-    displayName.value = ''
+    displayName.value = '';
   }
 }
 
 const statCards = computed(() => [
   {
     icon: svgWrap(
-      '<path d="M10 13a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1" />'
+      '<path d="M10 13a5 5 0 0 0 7.1.2l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" /><path d="M14 11a5 5 0 0 0-7.1-.2l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1" />',
     ),
     label: '收录链接',
     value: stats.value.totalLinks,
@@ -204,7 +267,7 @@ const statCards = computed(() => [
   },
   {
     icon: svgWrap(
-      '<circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" />'
+      '<circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" />',
     ),
     label: '公开链接',
     value: stats.value.publicLinks,
@@ -213,7 +276,7 @@ const statCards = computed(() => [
   },
   {
     icon: svgWrap(
-      '<path d="M7 11V8a5 5 0 0 1 10 0v3" /><rect x="5" y="11" width="14" height="9" rx="1.5" />'
+      '<path d="M7 11V8a5 5 0 0 1 10 0v3" /><rect x="5" y="11" width="14" height="9" rx="1.5" />',
     ),
     label: '私密链接',
     value: stats.value.privateLinks,
@@ -222,60 +285,60 @@ const statCards = computed(() => [
   },
   {
     icon: svgWrap(
-      '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />'
+      '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />',
     ),
     label: '导航分类',
     value: stats.value.totalCategories,
     caption: `公开 ${stats.value.publicCategories} · 私密 ${stats.value.privateCategories}`,
     href: '/admin/dashboard/categories',
   },
-])
+]);
 
 const latestLinks = computed(() =>
   [...links.value]
     .sort((a, b) => (Date.parse(b.created_at || '') || 0) - (Date.parse(a.created_at || '') || 0))
-    .slice(0, 5)
-)
+    .slice(0, 5),
+);
 
 const topCategories = computed(() =>
   [...categories.value]
     .sort(
       (a, b) =>
         (linkCountByCategory.value.get(b.id)?.total || 0) -
-        (linkCountByCategory.value.get(a.id)?.total || 0)
+        (linkCountByCategory.value.get(a.id)?.total || 0),
     )
-    .slice(0, 5)
-)
+    .slice(0, 5),
+);
 
-const categoryCount = (id: string) => linkCountByCategory.value.get(id)?.total || 0
+const categoryCount = (id: string) => linkCountByCategory.value.get(id)?.total || 0;
 
 const svgWrap = (inner: string) =>
-  `<svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`
+  `<svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 
 function handleKeyDown(event: KeyboardEvent) {
-  const target = event.target as HTMLElement | null
-  if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return
-  if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return
-  const key = event.key.toLowerCase()
+  const target = event.target as HTMLElement | null;
+  if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+  if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
+  const key = event.key.toLowerCase();
   if (key === 'n') {
-    event.preventDefault()
-    void router.push('/admin/dashboard/link/new')
+    event.preventDefault();
+    void router.push('/admin/dashboard/link/new');
   } else if (key === 'c') {
-    event.preventDefault()
-    void router.push('/admin/dashboard/category/new')
+    event.preventDefault();
+    void router.push('/admin/dashboard/category/new');
   } else if (key === 'r') {
-    event.preventDefault()
-    void loadData(true)
+    event.preventDefault();
+    void loadData(true);
   }
 }
 
 onMounted(() => {
-  void loadAdminData()
-  void loadDisplayName()
-  window.addEventListener('keydown', handleKeyDown)
-})
+  void loadAdminData();
+  void loadDisplayName();
+  window.addEventListener('keydown', handleKeyDown);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-})
+  window.removeEventListener('keydown', handleKeyDown);
+});
 </script>

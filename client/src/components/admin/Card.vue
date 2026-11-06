@@ -13,8 +13,9 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
-  defineProps<{ title?: string; subtitle?: string; bodyClass?: string }>(),
-  { title: '', subtitle: '', bodyClass: 'px-6 pb-6 pt-3' }
-)
+withDefaults(defineProps<{ title?: string; subtitle?: string; bodyClass?: string }>(), {
+  title: '',
+  subtitle: '',
+  bodyClass: 'px-6 pb-6 pt-3',
+});
 </script>

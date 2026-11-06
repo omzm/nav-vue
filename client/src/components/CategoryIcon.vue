@@ -8,7 +8,7 @@ const props = withDefaults(
     icon?: string;
     className?: string;
   }>(),
-  { icon: '', className: '' }
+  { icon: '', className: '' },
 );
 
 // 用 computed 包起来：后台改了分类图标后，同 id 的组件实例被复用时能实时更新
@@ -18,7 +18,7 @@ const isIconFont = computed(
   () =>
     value.value.startsWith('icon-') ||
     value.value.includes(' icon-') ||
-    value.value.startsWith('iconfont ')
+    value.value.startsWith('iconfont '),
 );
 </script>
 

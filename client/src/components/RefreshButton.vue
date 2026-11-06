@@ -4,7 +4,7 @@ const props = withDefaults(
     onRefresh?: () => void | Promise<void>;
     isRefreshing?: boolean;
   }>(),
-  { onRefresh: undefined, isRefreshing: false }
+  { onRefresh: undefined, isRefreshing: false },
 );
 </script>
 

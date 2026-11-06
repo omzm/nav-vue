@@ -1,25 +1,19 @@
 import { createHmac, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
 import { env } from './env.js';
 
-/**
- * 管理员会话签发与校验（服务端专用）。
- * Token 格式与 nav（Next.js 版）完全一致：
- *   v1.<base64url(email)>.<exp>.<hmac-sha256 hex>
- * 因此用同一个 ADMIN_SESSION_SECRET 时，旧版签发的 Cookie 可直接沿用。
- */
+/** Signed admin cookies carry a database session version for revocation. */
 
 export const ADMIN_COOKIE_NAME = 'nav_admin';
 
 /** 管理员会话有效期：7 天（秒） */
 export const ADMIN_SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
-/** 开发环境本地测试登录的邮箱（仅 NODE_ENV=development 可用） */
-export const LOCAL_ADMIN_EMAIL = 'local-admin@development';
-
 function getSessionSecret(): string {
   const secret = env.sessionSecret;
   if (!secret) {
-    throw new Error('ADMIN_SESSION_SECRET 未配置：请在环境变量中设置一个随机长字符串后重启应用（后台将拒绝所有访问）');
+    throw new Error(
+      'ADMIN_SESSION_SECRET 未配置：请在环境变量中设置一个随机长字符串后重启应用（后台将拒绝所有访问）',
+    );
   }
   return secret;
 }
@@ -45,9 +39,9 @@ export function timingSafeEqualStr(a: string, b: string): boolean {
 }
 
 /** 签发管理员会话 token */
-export function signAdminToken(email: string): string {
+export function signAdminToken(email: string, sessionVersion = '0'): string {
   const exp = Math.floor(Date.now() / 1000) + ADMIN_SESSION_TTL_SECONDS;
-  const payload = `v1.${base64UrlEncode(email)}.${exp}`;
+  const payload = `v2.${base64UrlEncode(email)}.${exp}.${base64UrlEncode(sessionVersion)}`;
   const signature = hmacSha256Hex(getSessionSecret(), payload);
   return `${payload}.${signature}`;
 }
@@ -57,12 +51,12 @@ export function verifyAdminToken(token: string | null | undefined): string | nul
   try {
     if (!token) return null;
     const parts = token.split('.');
-    if (parts.length !== 4) return null;
-    const [version, emailB64, expRaw, signature] = parts;
-    if (version !== 'v1' || !emailB64 || !signature) return null;
+    if (parts.length !== 5) return null;
+    const [version, emailB64, expRaw, sessionVersion, signature] = parts;
+    if (version !== 'v2' || !emailB64 || !sessionVersion || !signature) return null;
     const exp = Number(expRaw);
-    if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return null;
-    const expected = hmacSha256Hex(getSessionSecret(), `v1.${emailB64}.${exp}`);
+    if (!Number.isFinite(exp) || exp * 1000 <= Date.now()) return null;
+    const expected = hmacSha256Hex(getSessionSecret(), `v2.${emailB64}.${exp}.${sessionVersion}`);
     if (!timingSafeEqualStr(expected, signature)) return null;
     return base64UrlDecode(emailB64);
   } catch {
@@ -78,7 +72,7 @@ export function getAdminTokenExp(token: string | null | undefined): number | nul
   try {
     if (!token) return null;
     const parts = token.split('.');
-    if (parts.length !== 4 || parts[0] !== 'v1') return null;
+    if (parts.length !== 5 || parts[0] !== 'v2') return null;
     const exp = Number(parts[2]);
     return Number.isFinite(exp) ? exp : null;
   } catch {
@@ -95,4 +89,9 @@ export function adminCookieOptions() {
     secure: env.isProd,
     maxAge: ADMIN_SESSION_TTL_SECONDS * 1000,
   };
+}
+
+/** Only call after verifyAdminToken has verified the signature. */
+export function getAdminTokenVersion(token: string): string {
+  return base64UrlDecode(token.split('.')[3] || '');
 }

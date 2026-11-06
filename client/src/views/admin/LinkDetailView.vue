@@ -6,7 +6,10 @@
     </div>
 
     <div v-else class="flex flex-col gap-6">
-      <PageHeader :title="isEdit ? '编辑链接' : '添加链接'" subtitle="填写网站信息，选择一个合适的分类。" />
+      <PageHeader
+        :title="isEdit ? '编辑链接' : '添加链接'"
+        subtitle="填写网站信息，选择一个合适的分类。"
+      />
 
       <div class="grid gap-5 lg:grid-cols-[1fr_320px]">
         <Card title="链接信息" class="min-w-0">
@@ -25,22 +28,45 @@
               <TextInput v-model="title" placeholder="例如：GitHub" required />
             </Field>
 
-            <Field label="网站 URL" required hint="填好链接后点「AI 生成」，可自动获取网站名称与描述">
+            <Field
+              label="网站 URL"
+              required
+              hint="填好链接后点「AI 生成」，可自动获取网站名称与描述"
+            >
               <TextInput v-model="url" placeholder="https://github.com" inputmode="url" required />
             </Field>
 
             <Field label="网站描述" required>
               <template #action>
-                <AppButton size="sm" variant="ghost" :loading="aiGenerating" @click="handleAiGenerate">
+                <AppButton
+                  size="sm"
+                  variant="ghost"
+                  :loading="aiGenerating"
+                  @click="handleAiGenerate"
+                >
                   <template #icon>
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg
+                      class="h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" />
                     </svg>
                   </template>
                   AI 生成
                 </AppButton>
               </template>
-              <TextArea v-model="description" placeholder="简短描述这个网站的用途" :rows="4" required />
+              <TextArea
+                v-model="description"
+                placeholder="简短描述这个网站的用途"
+                :rows="4"
+                required
+              />
             </Field>
 
             <Field label="自定义图标">
@@ -67,7 +93,10 @@
 
         <aside class="flex min-w-0 flex-col gap-5">
           <Card title="图标预览">
-            <p class="text-xs leading-5 text-slate-400" :class="iconError && !iconFetching ? 'text-red-500' : ''">
+            <p
+              class="text-xs leading-5 text-slate-400"
+              :class="iconError && !iconFetching ? 'text-red-500' : ''"
+            >
               {{
                 iconFetching
                   ? '正在获取网站图标…'
@@ -79,7 +108,9 @@
               }}
             </p>
             <div class="mt-3 flex items-center gap-4">
-              <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-3xl">
+              <span
+                class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-3xl"
+              >
                 <LinkIcon
                   :key="iconPreviewKey"
                   :url="url"
@@ -90,14 +121,15 @@
                 />
               </span>
               <div class="flex flex-wrap gap-2">
-                <AppButton size="sm" :disabled="!url.trim()" :loading="iconFetching" @click="resetIcon">
-                  {{ iconFetching ? '获取中…' : '重新获取' }}
-                </AppButton>
                 <AppButton
                   size="sm"
-                  variant="ghost"
-                  @click="openEmojipedia"
+                  :disabled="!url.trim()"
+                  :loading="iconFetching"
+                  @click="resetIcon"
                 >
+                  {{ iconFetching ? '获取中…' : '重新获取' }}
+                </AppButton>
+                <AppButton size="sm" variant="ghost" @click="openEmojipedia">
                   打开 Emojipedia
                 </AppButton>
               </div>
@@ -154,300 +186,293 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { get, post, put } from '@/api/client'
-import { loadAdminData, refreshSnapshot, useAdminData } from '@/composables/useAdminData'
-import { apiErrorMessage, toast } from '@/composables/useToast'
-import AppButton from '@/components/admin/AppButton.vue'
-import Card from '@/components/admin/Card.vue'
-import Field from '@/components/admin/Field.vue'
-import LinkIcon from '@/components/admin/LinkIcon.vue'
-import Modal from '@/components/admin/Modal.vue'
-import NumberInput from '@/components/admin/NumberInput.vue'
-import PageHeader from '@/components/admin/PageHeader.vue'
-import SelectInput from '@/components/admin/SelectInput.vue'
-import Spinner from '@/components/admin/Spinner.vue'
-import Switch from '@/components/admin/Switch.vue'
-import TextArea from '@/components/admin/TextArea.vue'
-import TextInput from '@/components/admin/TextInput.vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import { get, post, put } from '@/api/client';
+import { loadAdminData, useAdminData } from '@/composables/useAdminData';
+import { apiErrorMessage, toast } from '@/composables/useToast';
+import AppButton from '@/components/admin/AppButton.vue';
+import Card from '@/components/admin/Card.vue';
+import Field from '@/components/admin/Field.vue';
+import LinkIcon from '@/components/admin/LinkIcon.vue';
+import Modal from '@/components/admin/Modal.vue';
+import NumberInput from '@/components/admin/NumberInput.vue';
+import PageHeader from '@/components/admin/PageHeader.vue';
+import SelectInput from '@/components/admin/SelectInput.vue';
+import Spinner from '@/components/admin/Spinner.vue';
+import Switch from '@/components/admin/Switch.vue';
+import TextArea from '@/components/admin/TextArea.vue';
+import TextInput from '@/components/admin/TextInput.vue';
 
-const router = useRouter()
-const route = useRoute()
-const { categories, links, loadData } = useAdminData()
+let active = true;
+onBeforeRouteLeave(() => {
+  active = false;
+});
+const router = useRouter();
+const route = useRoute();
+const { categories, links, loadData } = useAdminData();
 
-const linkId = computed(() => route.params.id as string)
-const isEdit = computed(() => Boolean(linkId.value) && linkId.value !== 'new')
+const linkId = computed(() => route.params.id as string);
+const isEdit = computed(() => Boolean(linkId.value) && linkId.value !== 'new');
 
-const categoryId = ref('')
-const title = ref('')
-const url = ref('')
-const description = ref('')
-const icon = ref('')
-const iconCleared = ref(false)
-const order = ref(0)
-const isPrivate = ref(false)
-const iconError = ref(false)
-const iconFetching = ref(false)
-const iconPreviewKey = ref(0)
-let iconFetchTimer: ReturnType<typeof setTimeout> | null = null
+const categoryId = ref('');
+const title = ref('');
+const url = ref('');
+const description = ref('');
+const icon = ref('');
+const iconCleared = ref(false);
+const order = ref(0);
+const isPrivate = ref(false);
+const iconError = ref(false);
+const iconFetching = ref(false);
+const iconPreviewKey = ref(0);
+let iconFetchTimer: ReturnType<typeof setTimeout> | null = null;
 
-const saving = ref(false)
-const saveAndContinueLoading = ref(false)
-const dataLoading = ref(isEdit.value)
-const aiGenerating = ref(false)
-const savingRef = ref(false)
+const saving = ref(false);
+const saveAndContinueLoading = ref(false);
+const dataLoading = ref(isEdit.value);
+const aiGenerating = ref(false);
+const savingRef = ref(false);
 
 const duplicateDialog = ref<{
-  open: boolean
-  existingLink: { id: string; url: string; title: string } | null
-  continueAdding: boolean
-}>({ open: false, existingLink: null, continueAdding: false })
+  open: boolean;
+  existingLink: { id: string; url: string; title: string } | null;
+  continueAdding: boolean;
+}>({ open: false, existingLink: null, continueAdding: false });
 
 const categoryOptions = computed(() =>
   categories.value.map((c) => ({
     value: c.id,
     label: c.name + (c.is_private ? '（私密）' : ''),
-  }))
-)
+  })),
+);
 
 // 用户清空图标后不再用"重新获取"前的自动图标
-const effectiveIcon = computed(() => (iconCleared.value ? '' : icon.value))
-
-function normalizeUrlForCompare(raw: string): string {
-  const trimmed = raw.trim()
-  try {
-    const parsed = new URL(trimmed)
-    parsed.hostname = parsed.hostname.toLowerCase()
-    let result = parsed.toString()
-    if (result.length > 1 && result.endsWith('/')) result = result.slice(0, -1)
-    return result
-  } catch {
-    return trimmed
-  }
-}
+const effectiveIcon = computed(() => (iconCleared.value ? '' : icon.value));
 
 function resetIcon() {
-  icon.value = ''
-  iconCleared.value = true
-  iconError.value = false
+  icon.value = '';
+  iconCleared.value = true;
+  iconError.value = false;
   // 强制预览图重挂载，确保即使地址没变也能收到 load/error 回报进度
-  iconPreviewKey.value += 1
-  iconFetching.value = true
-  if (iconFetchTimer) clearTimeout(iconFetchTimer)
+  iconPreviewKey.value += 1;
+  iconFetching.value = true;
+  if (iconFetchTimer) clearTimeout(iconFetchTimer);
   // 兜底：图片事件没回来时 8 秒后收起动画，避免一直转圈
   iconFetchTimer = setTimeout(() => {
-    iconFetching.value = false
-  }, 8000)
+    iconFetching.value = false;
+  }, 8000);
 }
 
 function handleIconLoad() {
-  if (iconFetchTimer) clearTimeout(iconFetchTimer)
-  iconFetching.value = false
+  if (iconFetchTimer) clearTimeout(iconFetchTimer);
+  iconFetching.value = false;
 }
 
 function handleIconError() {
-  if (iconFetchTimer) clearTimeout(iconFetchTimer)
-  iconFetching.value = false
-  iconError.value = true
+  if (iconFetchTimer) clearTimeout(iconFetchTimer);
+  iconFetching.value = false;
+  iconError.value = true;
 }
 
 function openEmojipedia() {
-  window.open('https://emojipedia.org', '_blank', 'noopener,noreferrer')
+  window.open('https://emojipedia.org', '_blank', 'noopener,noreferrer');
 }
 
 function goBack() {
-  router.back()
+  router.back();
 }
 
 /** 新建时切换分类：自动填入该分类的下一个排序值 */
 function handleCategoryChange(nextCategoryId: string) {
-  categoryId.value = nextCategoryId
-  if (isEdit.value || !nextCategoryId) return
-  const count = links.value.filter((l) => l.category_id === nextCategoryId).length
-  order.value = count + 1
+  categoryId.value = nextCategoryId;
+  if (isEdit.value || !nextCategoryId) return;
+  const maxOrder = links.value
+    .filter((l) => l.category_id === nextCategoryId)
+    .reduce((max, l) => Math.max(max, l.order), 0);
+  order.value = maxOrder + 1;
 }
 
 async function handleAiGenerate() {
   // 只要求填 URL：名称没填时服务端抓页面 <title>自动补
   if (!url.value.trim()) {
-    toast.warning('请先填写网站 URL')
-    return
+    toast.warning('请先填写网站 URL');
+    return;
   }
-  aiGenerating.value = true
+  aiGenerating.value = true;
   try {
     const result = await post<{ title: string; description: string }>('/admin/ai-describe', {
       title: title.value.trim(),
       url: url.value.trim(),
-    })
+    });
     if (!title.value.trim() && result.title) {
-      title.value = result.title
+      title.value = result.title;
     }
-    description.value = result.description
-    toast.success('网站名称与描述已生成，可再手动调整')
+    description.value = result.description;
+    toast.success('网站名称与描述已生成，可再手动调整');
   } catch (error) {
-    toast.error(apiErrorMessage(error, '生成失败'))
+    toast.error(apiErrorMessage(error, '生成失败'));
   } finally {
-    aiGenerating.value = false
+    aiGenerating.value = false;
   }
 }
 
 function validateForm(): boolean {
   if (!categoryId.value) {
-    toast.warning('请选择所属分类')
-    return false
+    toast.warning('请选择所属分类');
+    return false;
   }
   if (!title.value.trim()) {
-    toast.warning('请填写网站名称')
-    return false
+    toast.warning('请填写网站名称');
+    return false;
   }
   if (!url.value.trim()) {
-    toast.warning('请填写网站 URL')
-    return false
+    toast.warning('请填写网站 URL');
+    return false;
   }
   try {
-    new URL(url.value.trim())
+    const parsed = new URL(url.value.trim());
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Unsupported URL');
   } catch {
-    toast.warning('请输入完整有效的 URL')
-    return false
+    toast.warning('请输入完整有效的 URL');
+    return false;
   }
   if (!description.value.trim()) {
-    toast.warning('请填写网站描述')
-    return false
+    toast.warning('请填写网站描述');
+    return false;
   }
-  return true
+  return true;
 }
 
 async function checkDuplicateUrl(checkUrl: string) {
-  try {
-    const params = new URLSearchParams({ url: checkUrl })
-    if (isEdit.value) params.set('excludeId', linkId.value)
-    const result = await get<{ duplicate: { id: string; url: string; title: string } | null }>(
-      `/admin/links/check-duplicate?${params.toString()}`
-    )
-    return result.duplicate
-  } catch (error) {
-    console.error('检查重复链接失败:', error)
-    return null
-  }
+  const params = new URLSearchParams({ url: checkUrl });
+  if (isEdit.value) params.set('excludeId', linkId.value);
+  const result = await get<{ duplicate: { id: string; url: string; title: string } | null }>(
+    '/admin/links/check-duplicate?' + params.toString(),
+  );
+  return result.duplicate;
 }
 
 async function saveLink(continueAdding: boolean, skipDuplicateCheck = false) {
-  if (savingRef.value) return
-  savingRef.value = true
-  if (continueAdding) saveAndContinueLoading.value = true
-  else saving.value = true
+  if (savingRef.value) return;
+  savingRef.value = true;
+  const id = linkId.value;
+  const editing = isEdit.value;
+  if (continueAdding) saveAndContinueLoading.value = true;
+  else saving.value = true;
 
   try {
     if (!skipDuplicateCheck) {
-      const existing = await checkDuplicateUrl(url.value.trim())
+      const existing = await checkDuplicateUrl(url.value.trim());
+      if (!active) return;
       if (existing) {
-        duplicateDialog.value = { open: true, existingLink: existing, continueAdding }
-        return
+        duplicateDialog.value = { open: true, existingLink: existing, continueAdding };
+        return;
       }
     }
 
     const payload = {
       category_id: categoryId.value,
       title: title.value.trim(),
-      url: normalizeUrlForCompare(url.value.trim()),
+      url: url.value.trim(),
       description: description.value.trim(),
       icon: icon.value.trim() || null,
       order: order.value,
       is_private: isPrivate.value,
+    };
+
+    if (!active) return;
+    if (editing) {
+      await put(`/admin/links/${id}`, payload);
+      toast.success('链接已更新');
+    } else {
+      await post('/admin/links', payload);
+      toast.success('链接已添加');
     }
 
-    if (isEdit.value) {
-      await put(`/admin/links/${linkId.value}`, payload)
-      toast.success('链接已更新')
-    } else {
-      await post('/admin/links', payload)
-      toast.success('链接已添加')
-    }
+    await loadData(true, { silent: true });
 
-    await refreshSnapshot()
-    await loadData(true, { silent: true })
-
-    if (continueAdding && !isEdit.value) {
-      resetForm()
+    if (!active) return;
+    if (continueAdding && !editing) {
+      resetForm();
     } else {
-      await router.push('/admin/dashboard/links')
+      await router.push('/admin/dashboard/links');
     }
   } catch (error) {
-    toast.error(apiErrorMessage(error, '保存失败，请重试'))
+    toast.error(apiErrorMessage(error, '保存失败，请重试'));
   } finally {
-    savingRef.value = false
-    saving.value = false
-    saveAndContinueLoading.value = false
+    savingRef.value = false;
+    saving.value = false;
+    saveAndContinueLoading.value = false;
   }
 }
 
 async function resetForm() {
-  title.value = ''
-  url.value = ''
-  description.value = ''
-  icon.value = ''
-  iconCleared.value = false
-  order.value = 0
-  isPrivate.value = false
-  iconError.value = false
-  if (categoryId.value) handleCategoryChange(categoryId.value)
+  title.value = '';
+  url.value = '';
+  description.value = '';
+  icon.value = '';
+  iconCleared.value = false;
+  order.value = 0;
+  isPrivate.value = false;
+  iconError.value = false;
+  if (categoryId.value) handleCategoryChange(categoryId.value);
 }
 
 function validateAndSave(continueAdding = false) {
-  if (!validateForm()) return
-  void saveLink(continueAdding)
+  if (!validateForm()) return;
+  void saveLink(continueAdding);
 }
 
 function closeDuplicateDialog() {
-  duplicateDialog.value = { open: false, existingLink: null, continueAdding: false }
+  duplicateDialog.value = { open: false, existingLink: null, continueAdding: false };
 }
 
 function confirmDuplicateSave() {
-  const continueAdding = duplicateDialog.value.continueAdding
-  closeDuplicateDialog()
-  void saveLink(continueAdding, true)
+  const continueAdding = duplicateDialog.value.continueAdding;
+  closeDuplicateDialog();
+  void saveLink(continueAdding, true);
 }
 
 onUnmounted(() => {
-  if (iconFetchTimer) clearTimeout(iconFetchTimer)
-})
+  if (iconFetchTimer) clearTimeout(iconFetchTimer);
+});
 
 // 新建页 ?category= 预设：路由按 path 做 key，query 变化不 remount，用 watch 跟进
 function applyCategoryPreset() {
-  if (isEdit.value) return
-  const preset = route.query.category
+  if (isEdit.value) return;
+  const preset = route.query.category;
   if (typeof preset === 'string' && preset && categories.value.some((c) => c.id === preset)) {
-    handleCategoryChange(preset)
+    handleCategoryChange(preset);
   }
 }
 
-watch(() => route.query.category, applyCategoryPreset)
+watch(() => route.query.category, applyCategoryPreset);
 
 onMounted(async () => {
-  await loadAdminData()
+  await loadAdminData();
   // 新建：URL 带有 ?category= 预设分类时自动选中
   if (!isEdit.value) {
-    applyCategoryPreset()
-    return
+    applyCategoryPreset();
+    return;
   }
   // 编辑：从共享数据里取当前链接
   try {
-    const link = links.value.find((l) => l.id === linkId.value)
+    const link = links.value.find((l) => l.id === linkId.value);
     if (!link) {
-      toast.error('该链接不存在，可能已被删除')
-      await router.replace('/admin/dashboard/links')
-      return
+      toast.error('该链接不存在，可能已被删除');
+      await router.replace('/admin/dashboard/links');
+      return;
     }
-    categoryId.value = link.category_id
-    title.value = link.title
-    url.value = link.url
-    description.value = link.description
-    icon.value = link.icon || ''
-    order.value = link.order
-    isPrivate.value = link.is_private
+    categoryId.value = link.category_id;
+    title.value = link.title;
+    url.value = link.url;
+    description.value = link.description;
+    icon.value = link.icon || '';
+    order.value = link.order;
+    isPrivate.value = link.is_private;
   } finally {
-    dataLoading.value = false
+    dataLoading.value = false;
   }
-})
+});
 </script>

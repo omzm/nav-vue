@@ -4,6 +4,7 @@
       <button
         v-for="t in tabs"
         :key="t.key"
+        :id="tab !== 'svg' && tab === t.key ? field?.id : undefined"
         type="button"
         :aria-pressed="tab === t.key"
         :class="tabButtonClass(t.key)"
@@ -58,73 +59,117 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import IconFont from './IconFont.vue';
+import { useField } from '@/composables/useField';
+const field = useField();
+import { computed, ref, watch } from 'vue';
+import IconFont from '@/components/IconFont.vue';
 import { BUILTIN_ICON_NAMES } from '@/utils/iconData';
-import TextArea from './TextArea.vue'
-import { isSvgCode } from '@/utils/icons'
+import TextArea from './TextArea.vue';
+import { isSvgCode } from '@/utils/icons';
 
-type IconTab = 'builtin' | 'emoji' | 'svg'
+type IconTab = 'builtin' | 'emoji' | 'svg';
 
 const EMOJI_OPTIONS = [
-  '📁', '📂', '🛠️', '🔧', '💻', '🖥️', '📱', '⌨️',
-  '🎨', '🖌️', '📚', '📖', '🎓', '💡', '🚀', '⭐',
-  '🔥', '🎯', '📌', '📎', '🔗', '🌐', '🔍', '📝',
-  '💰', '💳', '🛒', '🎮', '🎬', '🎵', '🎧', '📷',
-  '✈️', '🏠', '💼', '📊', '📅', '⏰', '🧰', '🔑',
-  '📦', '🎁', '💾', '📡', '🔋', '🔒', '🌙', '☀️',
-]
+  '📁',
+  '📂',
+  '🛠️',
+  '🔧',
+  '💻',
+  '🖥️',
+  '📱',
+  '⌨️',
+  '🎨',
+  '🖌️',
+  '📚',
+  '📖',
+  '🎓',
+  '💡',
+  '🚀',
+  '⭐',
+  '🔥',
+  '🎯',
+  '📌',
+  '📎',
+  '🔗',
+  '🌐',
+  '🔍',
+  '📝',
+  '💰',
+  '💳',
+  '🛒',
+  '🎮',
+  '🎬',
+  '🎵',
+  '🎧',
+  '📷',
+  '✈️',
+  '🏠',
+  '💼',
+  '📊',
+  '📅',
+  '⏰',
+  '🧰',
+  '🔑',
+  '📦',
+  '🎁',
+  '💾',
+  '📡',
+  '🔋',
+  '🔒',
+  '🌙',
+  '☀️',
+];
 
 function detectTab(value: string): IconTab {
-  const trimmed = value.trim()
-  if (!trimmed) return 'builtin'
-  if (isSvgCode(trimmed)) return 'svg'
-  if (trimmed.startsWith('icon-')) return 'builtin'
-  return 'emoji'
+  const trimmed = value.trim();
+  if (!trimmed) return 'builtin';
+  if (isSvgCode(trimmed)) return 'svg';
+  if (trimmed.startsWith('icon-')) return 'builtin';
+  return 'emoji';
 }
 
-const props = defineProps<{ modelValue: string }>()
-defineEmits<{ 'update:modelValue': [value: string] }>()
+const props = defineProps<{ modelValue: string }>();
+defineEmits<{ 'update:modelValue': [value: string] }>();
 
-const tab = ref<IconTab>(detectTab(props.modelValue))
+const tab = ref<IconTab>(detectTab(props.modelValue));
 // 用户手动切换后不再自动干预
-const userTouched = ref(false)
+const userTouched = ref(false);
 
 // 编辑页异步载入已有图标（空 -> 有值）时自动切到对应 tab
 watch(
   () => props.modelValue,
   (next, prev) => {
     if (!userTouched.value && (prev ?? '').trim() === '' && next.trim() !== '') {
-      tab.value = detectTab(next)
+      tab.value = detectTab(next);
     }
-  }
-)
+  },
+);
 
 const tabs: Array<{ key: IconTab; label: string }> = [
   { key: 'builtin', label: '内置图标' },
   { key: 'emoji', label: 'Emoji' },
   { key: 'svg', label: '自定义 SVG' },
-]
+];
 
 function setTab(next: IconTab) {
-  userTouched.value = true
-  tab.value = next
+  userTouched.value = true;
+  tab.value = next;
 }
 
 function tabButtonClass(key: IconTab): string {
-  const base = 'rounded-full border px-3.5 py-1.5 text-[13px] transition-colors cursor-pointer'
+  const base = 'rounded-full border px-3.5 py-1.5 text-[13px] transition-colors cursor-pointer';
   return tab.value === key
     ? `${base} border-ink bg-ink text-white`
-    : `${base} border-edge bg-white text-slate-700 hover:border-[#CBD7E6]`
+    : `${base} border-edge bg-white text-slate-700 hover:border-[#CBD7E6]`;
 }
 
 function gridButtonClass(selected: boolean): string {
   const base =
-    'flex aspect-square items-center justify-center rounded-lg text-slate-800 transition-colors cursor-pointer'
+    'flex aspect-square items-center justify-center rounded-lg text-slate-800 transition-colors cursor-pointer';
   return selected
     ? `${base} border-2 border-steel bg-steelsoft`
-    : `${base} border border-edge bg-white hover:border-[#CBD7E6]`
+    : `${base} border border-edge bg-white hover:border-[#CBD7E6]`;
 }
 
-const isSvg = computed(() => isSvgCode(props.modelValue))
+const isSvg = computed(() => isSvgCode(props.modelValue));
 </script>

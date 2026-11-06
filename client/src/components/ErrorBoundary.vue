@@ -18,7 +18,7 @@ watch(
   () => route.fullPath,
   () => {
     error.value = null;
-  }
+  },
 );
 
 function reload() {
@@ -31,7 +31,9 @@ function reload() {
     v-if="error"
     class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4"
   >
-    <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center shadow-lg">
+    <div
+      class="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center shadow-lg"
+    >
       <div class="text-5xl mb-4">⚠️</div>
       <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">页面出错了</h1>
       <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">

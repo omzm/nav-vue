@@ -1,5 +1,9 @@
 <template>
-  <RouterLink to="/admin/dashboard" class="flex items-center gap-2.5" :aria-label="compact ? '管理后台' : '返回工作台'">
+  <RouterLink
+    to="/admin/dashboard"
+    class="flex items-center gap-2.5"
+    :aria-label="compact ? '管理后台' : '返回工作台'"
+  >
     <img src="/icon.svg" alt="收藏夹" class="h-8 w-8 rounded-full" />
     <span v-if="!compact" class="flex flex-col leading-tight">
       <span class="text-[15px] font-medium tracking-[-0.01em] text-ink">导航后台</span>
@@ -9,5 +13,5 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
 </script>

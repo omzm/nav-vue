@@ -16,7 +16,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 router.get('/snapshot', async (_req, res) => {
   try {
     const snapshot = await getSnapshot();
-    res.set('Cache-Control', 'public, s-maxage=45, stale-while-revalidate=300');
+    res.set('Cache-Control', 'no-store');
     res.json(snapshot);
   } catch (error) {
     console.error('GET /api/snapshot failed:', error);
@@ -46,7 +46,10 @@ router.post('/unlock', async (req, res) => {
     if (!payload.unlocked) {
       return res.json({ ok: false, categories: [], reason: 'mismatch' });
     }
-    return res.json({ ok: true, categories: Array.isArray(payload.categories) ? payload.categories : [] });
+    return res.json({
+      ok: true,
+      categories: Array.isArray(payload.categories) ? payload.categories : [],
+    });
   } catch (error) {
     console.error('POST /api/unlock failed:', error);
     return res.json({ ok: false, categories: [], reason: 'error' });
@@ -75,8 +78,6 @@ router.get('/submit/config', async (_req, res) => {
  * 安全设计与 nav 一致：密码只存服务端环境变量、timingSafeEqual 比对、
  * 全站每小时最多 20 条、URL 去重、链接继承分类的公开/私密属性。
  */
-const MAX_SUBMITS_PER_HOUR = 20;
-
 
 function isPasswordValid(input: string, expected: string): boolean {
   if (!input || !expected) return false;
@@ -88,11 +89,10 @@ router.post('/submit', async (req, res) => {
   if (!expectedPassword) {
     return res.status(400).json({ ok: false, error: 'not_configured' });
   }
+  if (await isRateLimitedDb('submit-pw:' + getClientIp(req), 10, 600000)) {
+    return res.status(429).json({ ok: false, error: 'rate_limited' });
+  }
   if (!isPasswordValid(String(req.body?.password ?? ''), expectedPassword)) {
-    // 防暴力破解：DB 级滑动窗口（跨 serverless 实例），同一 IP 10 分钟 10 次
-    if (await isRateLimitedDb(`submit-pw:${getClientIp(req)}`, 10, 10 * 60_000)) {
-      return res.status(429).json({ ok: false, error: 'rate_limited' });
-    }
     return res.status(403).json({ ok: false, error: 'wrong_password' });
   }
 
@@ -100,89 +100,39 @@ router.post('/submit', async (req, res) => {
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(rawUrl);
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') throw new Error('unsupported protocol');
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:')
+      throw new Error('unsupported protocol');
   } catch {
     return res.status(400).json({ ok: false, error: 'invalid_url' });
   }
 
   const categoryId = String(req.body?.categoryId ?? '').trim();
-  if (!categoryId) {
+  if (!UUID_RE.test(categoryId)) {
     return res.status(400).json({ ok: false, error: 'invalid_category' });
   }
-  const title = String(req.body?.title ?? '').trim().slice(0, 100) || parsedUrl.hostname.replace(/^www\./, '');
-  const description = String(req.body?.description ?? '').trim().slice(0, 500);
-
-  let supabase;
-  try {
-    supabase = createServiceClient();
-  } catch {
-    return res.status(500).json({ ok: false, error: 'server_error' });
-  }
+  const title =
+    String(req.body?.title ?? '')
+      .trim()
+      .slice(0, 100) || parsedUrl.hostname.replace(/^www\./, '');
+  const description = String(req.body?.description ?? '')
+    .trim()
+    .slice(0, 500);
 
   try {
-    const { data: category, error: categoryError } = await supabase
-      .from('categories')
-      .select('id, is_private')
-      .eq('id', categoryId)
-      .maybeSingle();
-    if (categoryError || !category) {
-      return res.status(400).json({ ok: false, error: 'invalid_category' });
-    }
-
-    const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
-    const { count: recentCount, error: countError } = await supabase
-      .from('links')
-      .select('id', { count: 'exact', head: true })
-      .eq('source', 'public')
-      .gte('created_at', oneHourAgo);
-    if (countError) {
-      console.error('提交收录：频率检查失败', countError);
-      return res.status(500).json({ ok: false, error: 'server_error' });
-    }
-    if ((recentCount || 0) >= MAX_SUBMITS_PER_HOUR) {
-      return res.status(429).json({ ok: false, error: 'rate_limited' });
-    }
-
-    const normalized = normalizeUrl(rawUrl);
-    const { data: existing, error: dupError } = await supabase.from('links').select('id').eq('url', normalized).limit(1);
-    if (dupError) {
-      console.error('提交收录：去重检查失败', dupError);
-      return res.status(500).json({ ok: false, error: 'server_error' });
-    }
-    if ((existing || []).length > 0) {
-      return res.status(409).json({ ok: false, error: 'duplicate' });
-    }
-
-    const { count: categoryCount, error: orderError } = await supabase
-      .from('links')
-      .select('id', { count: 'exact', head: true })
-      .eq('category_id', categoryId);
-    if (orderError) {
-      console.error('提交收录：排序值查询失败', orderError);
-      return res.status(500).json({ ok: false, error: 'server_error' });
-    }
-
-    const { error: insertError } = await supabase.from('links').insert({
-      category_id: categoryId,
-      title,
-      url: normalized,
-      description,
-      icon: '',
-      order: (categoryCount || 0) + 1,
-      is_private: Boolean(category.is_private),
-      source: 'public',
+    const { data, error } = await createServiceClient().rpc('submit_public_link', {
+      p_category_id: categoryId,
+      p_title: title,
+      p_url: normalizeUrl(rawUrl),
+      p_description: description,
     });
-    if (insertError) {
-      console.error('提交收录：写入失败', insertError);
-      return res.status(500).json({ ok: false, error: 'server_error' });
+    if (error) throw error;
+    if (data !== 'ok') {
+      const status = data === 'duplicate' ? 409 : data === 'rate_limited' ? 429 : 400;
+      return res.status(status).json({ ok: false, error: data || 'server_error' });
     }
-
     invalidateSnapshot();
     return res.json({ ok: true });
-  } catch (error) {
-    // Supabase 网络抖动等异常：Express 4 不接管 async handler 的 rejected promise，
-    // 这里兜底 500，避免请求挂起无响应
-    console.error('提交收录：处理失败', error);
+  } catch {
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
@@ -249,7 +199,8 @@ router.post('/link-click', async (req, res) => {
     const supabase = createServiceClient();
     const { data: link, error: linkError } = await supabase
       .from('links')
-      .select('id')
+      .select('id,categories!inner(is_private)')
+      .eq('categories.is_private', false)
       .eq('id', linkId)
       .eq('is_private', false)
       .maybeSingle();

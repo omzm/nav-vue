@@ -7,9 +7,10 @@ export function normalizeUrl(raw: string): string {
   try {
     const parsed = new URL(trimmed);
     parsed.hostname = parsed.hostname.toLowerCase();
-    let result = parsed.toString();
-    if (result.length > 1 && result.endsWith('/')) result = result.slice(0, -1);
-    return result;
+    parsed.pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+    // Preserve query and fragment values byte-for-byte. Only an empty root path is omitted.
+    const result = parsed.toString();
+    return !parsed.search && !parsed.hash && parsed.pathname === '/' ? result.slice(0, -1) : result;
   } catch {
     return trimmed;
   }

@@ -15,7 +15,7 @@ const props = withDefaults(
     version: string;
     isOpen: boolean;
   }>(),
-  { hotLinks: () => [], submitEnabled: false }
+  { hotLinks: () => [], submitEnabled: false },
 );
 
 const emit = defineEmits<{
@@ -36,7 +36,7 @@ watch(
   (isOpen) => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
   },
-  { immediate: true }
+  { immediate: true },
 );
 onUnmounted(() => {
   document.body.style.overflow = '';
@@ -55,9 +55,8 @@ const submitCategories = computed<SubmitCategory[]>(() =>
     id: category.id,
     name: category.name,
     isPrivate: Boolean(category.isPrivate),
-  }))
+  })),
 );
-
 </script>
 
 <template>
@@ -72,7 +71,9 @@ const submitCategories = computed<SubmitCategory[]>(() =>
       props.isOpen ? 'translate-x-0' : '-translate-x-full invisible'
     } lg:translate-x-0 lg:visible lg:z-0 w-56 sm:w-64 flex flex-col shadow-2xl lg:shadow-none border-r border-gray-200 dark:border-gray-700/50`"
   >
-    <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700/50 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
+    <div
+      class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700/50 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50"
+    >
       <div class="flex items-center space-x-2 sm:space-x-2.5">
         <img src="/icon.svg" alt="Logo" class="w-7 h-7 sm:w-8 sm:h-8" />
         <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100">分类</h2>
@@ -83,7 +84,12 @@ const submitCategories = computed<SubmitCategory[]>(() =>
         @click="emit('toggle')"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </div>
@@ -98,14 +104,19 @@ const submitCategories = computed<SubmitCategory[]>(() =>
         @click="handleCategoryClick(null)"
       >
         <span class="flex items-center space-x-2 sm:space-x-2.5">
-          <span :class="`text-sm sm:text-base transition-transform duration-300 ${props.selectedCategory === null ? 'scale-110' : 'group-hover:scale-110'}`">
+          <span
+            :class="`text-sm sm:text-base transition-transform duration-300 ${props.selectedCategory === null ? 'scale-110' : 'group-hover:scale-110'}`"
+          >
             <CategoryIcon :icon="ALL_CATEGORIES_ICON" />
           </span>
-          <span :class="`text-xs sm:text-sm font-medium transition-colors duration-300 ${
-            props.selectedCategory === null
-              ? 'text-blue-500 dark:text-blue-400'
-              : 'text-gray-700 dark:text-gray-300'
-          }`">全部分类</span>
+          <span
+            :class="`text-xs sm:text-sm font-medium transition-colors duration-300 ${
+              props.selectedCategory === null
+                ? 'text-blue-500 dark:text-blue-400'
+                : 'text-gray-700 dark:text-gray-300'
+            }`"
+            >全部分类</span
+          >
         </span>
       </button>
 
@@ -120,21 +131,28 @@ const submitCategories = computed<SubmitCategory[]>(() =>
         @click="handleCategoryClick(category.id)"
       >
         <span class="flex items-center space-x-2 sm:space-x-2.5">
-          <span :class="`text-sm sm:text-base transition-transform duration-300 ${props.selectedCategory === category.id ? 'scale-110' : 'group-hover:scale-110'}`">
+          <span
+            :class="`text-sm sm:text-base transition-transform duration-300 ${props.selectedCategory === category.id ? 'scale-110' : 'group-hover:scale-110'}`"
+          >
             <CategoryIcon :icon="category.icon" />
           </span>
-          <span :class="`text-xs sm:text-sm font-medium transition-colors duration-300 ${
-            props.selectedCategory === category.id
-              ? 'text-blue-500 dark:text-blue-400'
-              : 'text-gray-700 dark:text-gray-300'
-          }`">{{ category.name }}</span>
+          <span
+            :class="`text-xs sm:text-sm font-medium transition-colors duration-300 ${
+              props.selectedCategory === category.id
+                ? 'text-blue-500 dark:text-blue-400'
+                : 'text-gray-700 dark:text-gray-300'
+            }`"
+            >{{ category.name }}</span
+          >
         </span>
       </button>
     </nav>
 
     <div v-if="props.hotLinks.length" class="px-2 sm:px-3 pb-2 sm:pb-3">
       <div class="border-t border-gray-200 dark:border-gray-700/50 pt-2 sm:pt-3">
-        <h3 class="px-2.5 sm:px-3 mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        <h3
+          class="px-2.5 sm:px-3 mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+        >
           今日热门
         </h3>
         <div class="space-y-0.5">
@@ -152,7 +170,9 @@ const submitCategories = computed<SubmitCategory[]>(() =>
             <LazyFavicon :url="link.url" alt="" img-class="w-4 h-4 object-contain flex-shrink-0">
               <span class="w-4 h-4 rounded-sm bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
             </LazyFavicon>
-            <span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 truncate flex-1 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+            <span
+              class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 truncate flex-1 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors"
+            >
               {{ link.title }}
             </span>
             <span class="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">

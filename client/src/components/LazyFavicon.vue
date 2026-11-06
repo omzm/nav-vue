@@ -4,7 +4,7 @@ import {
   getFallbackFaviconUrl,
   getFaviconUrl,
   extractDomain,
-  removeFaviconFromStorage,
+  markFaviconFailed,
 } from '@/utils/favicon';
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ watch(
   () => {
     useFallback.value = false;
     imgError.value = false;
-  }
+  },
 );
 
 onMounted(() => {
@@ -56,7 +56,7 @@ onMounted(() => {
       // 提前量设为 0：图标只在真正进入视口时才开始加载
       rootMargin: '0px 0px',
       threshold: 0.01,
-    }
+    },
   );
   observer.observe(node);
 });
@@ -76,9 +76,9 @@ const faviconUrl = computed(() => {
 });
 
 function handleImageError() {
-  if (!useFallback.value) {
-    // 主源失败：删掉已持久化的坏 URL，下次重载直接走降级，不再踩坑
-    removeFaviconFromStorage(extractDomain(props.url));
+  if (!useFallback.value && faviconUrl.value !== getFallbackFaviconUrl(props.url)) {
+    // 主源失败：短期记住失败，下次直接使用备用源
+    markFaviconFailed(extractDomain(props.url));
     useFallback.value = true;
     imgError.value = false;
     return;

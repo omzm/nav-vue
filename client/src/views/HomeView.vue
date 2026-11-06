@@ -74,7 +74,6 @@ const {
   showPrivate,
   privateCategories,
   handleSearchChange,
-  handleSearchFocus,
   clearSearchQuery,
   exitPrivateMode,
 } = usePrivateUnlock();
@@ -114,8 +113,19 @@ const sidebarCategories = computed<NavCategory[]>(() => {
 
   // 私密分类按后台 order 归位（与原来"开门"前就在快照里时的顺序一致），
   // 而不是一律沉底；旧快照没有 order 时保持原有相对顺序。
-  return [...publicCategories, ...privateCategories.value].sort(
-    (a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
+  const merged = new Map(publicCategories.map((category) => [category.id, category]));
+  for (const category of privateCategories.value) {
+    const existing = merged.get(category.id);
+    const links = new Map((existing?.links ?? []).map((link) => [link.id ?? link.url, link]));
+    for (const link of category.links) links.set(link.id ?? link.url, link);
+    merged.set(category.id, {
+      ...category,
+      isPrivate: existing?.isPrivate ?? category.isPrivate,
+      links: [...links.values()],
+    });
+  }
+  return [...merged.values()].sort(
+    (a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER),
   );
 });
 
@@ -145,7 +155,11 @@ const currentYear = new Date().getFullYear();
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex">
     <ThemeToggle />
-    <RefreshButton v-if="canRefresh" :on-refresh="handleRefresh" :is-refreshing="isRefreshButtonBusy" />
+    <RefreshButton
+      v-if="canRefresh"
+      :on-refresh="handleRefresh"
+      :is-refreshing="isRefreshButtonBusy"
+    />
     <BackToTop />
 
     <Sidebar
@@ -177,14 +191,27 @@ const currentYear = new Date().getFullYear();
             aria-label="打开侧边栏"
             @click="isSidebarOpen = !isSidebarOpen"
           >
-            <svg class="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              class="w-6 h-6 text-gray-700 dark:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
         </div>
       </div>
 
-      <header ref="headerRef" class="relative overflow-hidden border-b border-gray-200 dark:border-gray-700/50 shadow-sm">
+      <header
+        ref="headerRef"
+        class="relative overflow-hidden border-b border-gray-200 dark:border-gray-700/50 shadow-sm"
+      >
         <div
           class="absolute inset-0 bg-cover bg-center bg-gradient-to-br from-blue-400 to-indigo-600 transition-opacity duration-700"
           :class="wallpaperLoaded ? 'opacity-100' : 'opacity-0'"
@@ -198,8 +225,18 @@ const currentYear = new Date().getFullYear();
               aria-label="打开侧边栏"
               @click="isSidebarOpen = !isSidebarOpen"
             >
-              <svg class="w-6 h-6 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                class="w-6 h-6 text-white drop-shadow-lg"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.5"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             </button>
           </div>
@@ -212,11 +249,13 @@ const currentYear = new Date().getFullYear();
 
           <div class="flex justify-center px-2 sm:px-0">
             <div class="w-full max-w-md">
-              <SearchBar :value="searchQuery" :on-change="handleSearchChange" :on-focus="handleSearchFocus" />
+              <SearchBar :value="searchQuery" :on-change="handleSearchChange" />
             </div>
           </div>
           <div class="flex justify-center px-2 sm:px-0 mt-3 sm:mt-4">
-            <div class="w-full max-w-md px-3 py-1 rounded-full bg-white/25 dark:bg-gray-800/25 backdrop-blur-md text-gray-500 dark:text-gray-500 text-[10px] sm:text-xs text-center shadow-sm transition-all duration-300 hover:bg-white/40 dark:hover:bg-gray-800/40 hover:shadow-md leading-tight">
+            <div
+              class="w-full max-w-md px-3 py-1 rounded-full bg-white/25 dark:bg-gray-800/25 backdrop-blur-md text-gray-500 dark:text-gray-500 text-[10px] sm:text-xs text-center shadow-sm transition-all duration-300 hover:bg-white/40 dark:hover:bg-gray-800/40 hover:shadow-md leading-tight"
+            >
               {{ quoteText }}
             </div>
           </div>
@@ -235,9 +274,7 @@ const currentYear = new Date().getFullYear();
                 <p class="text-sm font-semibold text-amber-900 dark:text-amber-100">
                   隐私模式已开启
                 </p>
-                <p class="text-xs text-amber-700 dark:text-amber-300">
-                  正在显示隐藏的分类和链接
-                </p>
+                <p class="text-xs text-amber-700 dark:text-amber-300">正在显示隐藏的分类和链接</p>
               </div>
             </div>
             <button
@@ -266,7 +303,9 @@ const currentYear = new Date().getFullYear();
           <template v-else-if="snapshotLoadFailed && !snapshot">
             <div class="text-center py-20">
               <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">导航数据加载失败</p>
-              <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">网络开小差了，点下面按钮重试</p>
+              <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">
+                网络开小差了，点下面按钮重试
+              </p>
               <button
                 class="mt-5 px-5 py-2.5 rounded-full bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 active:scale-95 transition"
                 @click="loadSnapshot"
@@ -283,14 +322,24 @@ const currentYear = new Date().getFullYear();
             />
           </template>
           <div v-else class="text-center py-20">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-              <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div
+              class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-4"
+            >
+              <svg
+                class="w-10 h-10 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
-            <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">
-              没有找到匹配的结果
-            </p>
+            <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">没有找到匹配的结果</p>
             <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">
               试试其他关键词或选择不同的分类
             </p>
@@ -298,7 +347,9 @@ const currentYear = new Date().getFullYear();
         </div>
       </main>
 
-      <footer class="bg-white/80 dark:bg-gray-900/50 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700/50">
+      <footer
+        class="bg-white/80 dark:bg-gray-900/50 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700/50"
+      >
         <div class="px-4 lg:px-6 py-4 sm:py-5 lg:py-6">
           <div class="max-w-4xl mx-auto space-y-3">
             <div class="text-center">
@@ -310,7 +361,12 @@ const currentYear = new Date().getFullYear();
                   class="ml-1.5 inline-flex align-middle text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
                   </svg>
                 </a>
               </p>

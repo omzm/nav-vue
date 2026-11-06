@@ -3,11 +3,16 @@ import { env } from './env.js';
 
 /**
  * 带超时的 fetch：Supabase 失联/配错地址时快速失败，
- * 而不是无限挂起（首页快照等公开接口依赖快速降级到兜底数据）。
+ * 而不是无限挂起（公开接口需及时返回可重试错误）。
  */
 function fetchWithTimeout(ms: number): typeof fetch {
   return ((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
-    fetch(input, { ...init, signal: AbortSignal.timeout(ms) })) as typeof fetch;
+    fetch(input, {
+      ...init,
+      signal: init?.signal
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(ms)])
+        : AbortSignal.timeout(ms),
+    })) as typeof fetch;
 }
 
 /**
@@ -15,7 +20,8 @@ function fetchWithTimeout(ms: number): typeof fetch {
  * 对应 nav 的 createServerSupabaseClient。
  */
 export function createAnonClient(): SupabaseClient {
-  return createClient(env.supabaseUrl || 'https://placeholder.supabase.co', env.supabaseAnonKey || 'placeholder-key', {
+  if (!env.supabaseUrl || !env.supabaseAnonKey) throw new Error('Supabase 公开读取配置缺失');
+  return createClient(env.supabaseUrl, env.supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     // 8s 而非 10s：serverless 函数默认 10s 超时，超时设得比函数还长就永远触发不了，
     // 请求会先 504。8s 保证异常时走快速降级而不是挂到函数超时

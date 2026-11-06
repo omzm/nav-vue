@@ -13,7 +13,7 @@
 CREATE TABLE IF NOT EXISTS app_config (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL DEFAULT '',
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS categories (
   icon TEXT NOT NULL,
   "order" INTEGER NOT NULL DEFAULT 0,
   is_private BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 创建链接表
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS links (
   "order" INTEGER NOT NULL DEFAULT 0,
   is_private BOOLEAN DEFAULT FALSE,
   source TEXT NOT NULL DEFAULT 'admin',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 创建索引
@@ -89,7 +89,9 @@ CREATE POLICY "Allow public read on public categories"
 DROP POLICY IF EXISTS "Allow public read on public links" ON links;
 CREATE POLICY "Allow public read on public links"
   ON links FOR SELECT
-  USING (is_private = FALSE OR (is_admin()));
+  USING (is_admin() OR (is_private = FALSE AND EXISTS (
+    SELECT 1 FROM categories c WHERE c.id = links.category_id AND c.is_private = FALSE
+  )));
 
 -- 创建策略：只有管理员可以修改（管理员邮箱从 app_config 表动态读取）
 DROP POLICY IF EXISTS "Allow admin to insert categories" ON categories;
@@ -133,7 +135,7 @@ CREATE POLICY "Allow admin to delete links"
 CREATE TABLE IF NOT EXISTS link_clicks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   link_id UUID REFERENCES links(id) ON DELETE CASCADE,
-  clicked_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+  clicked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_link_clicks_link_id ON link_clicks(link_id);
@@ -157,7 +159,7 @@ CREATE POLICY "Allow admin to read link_clicks"
 CREATE TABLE IF NOT EXISTS site_stats (
   key TEXT PRIMARY KEY,
   value BIGINT NOT NULL DEFAULT 0,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 INSERT INTO site_stats (key, value)
@@ -181,7 +183,7 @@ DECLARE
   next_value BIGINT;
 BEGIN
   INSERT INTO site_stats AS stats (key, value, updated_at)
-  VALUES ('total_views', 1, TIMEZONE('utc', NOW()))
+  VALUES ('total_views', 1, NOW())
   ON CONFLICT (key)
   DO UPDATE SET
     value = stats.value + 1,
@@ -278,7 +280,8 @@ AS $$
     'stats',
     jsonb_build_object(
       'categoryCount', (SELECT COUNT(*) FROM categories WHERE COALESCE(is_private, false) = false),
-      'linkCount', (SELECT COUNT(*) FROM links WHERE COALESCE(is_private, false) = false),
+      'linkCount', (SELECT COUNT(*) FROM links l JOIN categories c ON c.id = l.category_id
+        WHERE COALESCE(l.is_private, false) = false AND COALESCE(c.is_private, false) = false),
       'totalViewCount', COALESCE((SELECT value FROM site_stats WHERE key = 'total_views'), 0)
     ),
     'generatedAt', now()
@@ -410,10 +413,165 @@ GRANT EXECUTE ON FUNCTION get_nav_private_data(text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION reorder_links(uuid[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION reorder_categories(uuid[]) TO authenticated;
 
--- 每天凌晨 0:05 (UTC) 自动清理前一天的点击记录（幂等：先删同名旧任务再建）
+-- 上海时间 00:05 清理前一天记录；边界显式指定时区，不依赖数据库会话时区。
 SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'clean-old-link-clicks';
 SELECT cron.schedule(
   'clean-old-link-clicks',
-  '5 0 * * *',
-  $$DELETE FROM link_clicks WHERE clicked_at < CURRENT_DATE$$
+  '5 16 * * *',
+  $$DELETE FROM link_clicks WHERE clicked_at < date_trunc('day', now() AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai'$$
 );
+
+-- URL duplicates remain allowed for administrators. These indexes serve equality and quota queries.
+CREATE INDEX IF NOT EXISTS idx_links_url ON links USING hash(url);
+CREATE INDEX IF NOT EXISTS idx_links_public_created ON links(created_at) WHERE source = 'public';
+
+CREATE TABLE IF NOT EXISTS rate_limit_windows (
+  key text PRIMARY KEY,
+  hits timestamptz[] NOT NULL DEFAULT '{}',
+  expires_at timestamptz NOT NULL
+);
+ALTER TABLE rate_limit_windows ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS idx_rate_limit_expiry ON rate_limit_windows(expires_at);
+
+CREATE OR REPLACE FUNCTION consume_rate_limit(p_key text, p_limit integer, p_window_ms integer)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  recent timestamptz[];
+  v_now timestamptz;
+BEGIN
+  IF length(p_key) > 300 OR p_limit NOT BETWEEN 1 AND 1000 OR p_window_ms NOT BETWEEN 1 AND 86400000 THEN
+    RAISE EXCEPTION 'Invalid rate limit';
+  END IF;
+  INSERT INTO rate_limit_windows AS bucket(key, expires_at) VALUES (p_key, clock_timestamp())
+    ON CONFLICT(key) DO UPDATE SET key = EXCLUDED.key RETURNING bucket.hits INTO recent;
+  v_now := clock_timestamp();
+  SELECT COALESCE(array_agg(t), '{}') INTO recent FROM unnest(recent) AS t
+    WHERE t > v_now - p_window_ms * interval '1 millisecond';
+  IF cardinality(recent) >= p_limit THEN RETURN false; END IF;
+  UPDATE rate_limit_windows SET hits = array_append(recent, v_now),
+    expires_at = v_now + p_window_ms * interval '1 millisecond' WHERE key = p_key;
+  RETURN true;
+END;
+$$;
+REVOKE ALL ON FUNCTION consume_rate_limit(text, integer, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION consume_rate_limit(text, integer, integer) TO service_role;
+
+SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'clean-expired-rate-limits';
+SELECT cron.schedule('clean-expired-rate-limits', '17 * * * *',
+  $$DELETE FROM rate_limit_windows WHERE expires_at < now()$$);
+
+-- Public cache revision contains no business data. Triggers invalidate every server instance.
+CREATE TABLE IF NOT EXISTS nav_cache_state (id boolean PRIMARY KEY DEFAULT true CHECK (id), version bigint NOT NULL DEFAULT 0);
+INSERT INTO nav_cache_state(id) VALUES (true) ON CONFLICT DO NOTHING;
+ALTER TABLE nav_cache_state ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION get_nav_snapshot_version() RETURNS text
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT version::text FROM nav_cache_state WHERE id;
+$$;
+CREATE OR REPLACE FUNCTION bump_nav_snapshot_version() RETURNS void
+LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
+  UPDATE nav_cache_state SET version = version + 1 WHERE id;
+$$;
+CREATE OR REPLACE FUNCTION invalidate_nav_snapshot() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN PERFORM bump_nav_snapshot_version(); RETURN NULL; END;
+$$;
+DROP TRIGGER IF EXISTS categories_snapshot_revision ON categories;
+CREATE TRIGGER categories_snapshot_revision AFTER INSERT OR UPDATE OR DELETE ON categories FOR EACH STATEMENT EXECUTE FUNCTION invalidate_nav_snapshot();
+DROP TRIGGER IF EXISTS links_snapshot_revision ON links;
+CREATE TRIGGER links_snapshot_revision AFTER INSERT OR UPDATE OR DELETE ON links FOR EACH STATEMENT EXECUTE FUNCTION invalidate_nav_snapshot();
+DROP TRIGGER IF EXISTS views_snapshot_revision ON site_stats;
+CREATE TRIGGER views_snapshot_revision AFTER INSERT OR UPDATE OR DELETE ON site_stats FOR EACH STATEMENT EXECUTE FUNCTION invalidate_nav_snapshot();
+DROP TRIGGER IF EXISTS clicks_snapshot_revision ON link_clicks;
+CREATE TRIGGER clicks_snapshot_revision AFTER INSERT OR UPDATE OR DELETE ON link_clicks FOR EACH STATEMENT EXECUTE FUNCTION invalidate_nav_snapshot();
+REVOKE ALL ON FUNCTION get_nav_snapshot_version() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION get_nav_snapshot_version() TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION bump_nav_snapshot_version() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION bump_nav_snapshot_version() TO service_role;
+REVOKE ALL ON FUNCTION invalidate_nav_snapshot() FROM PUBLIC, anon, authenticated;
+
+-- Server-only RPCs preserve atomicity after the application verifies its signed admin cookie.
+CREATE OR REPLACE FUNCTION admin_reorder_items(p_table text, p_ids uuid[]) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE affected integer;
+BEGIN
+  IF p_table NOT IN ('links', 'categories') OR cardinality(p_ids) NOT BETWEEN 1 AND 1000 OR
+    cardinality(p_ids) <> (SELECT count(DISTINCT id) FROM unnest(p_ids) id) THEN
+    RAISE EXCEPTION 'Invalid ordering';
+  END IF;
+  EXECUTE format('UPDATE %I t SET "order" = u.ord::integer FROM unnest($1) WITH ORDINALITY u(id,ord) WHERE t.id = u.id', p_table) USING p_ids;
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> cardinality(p_ids) THEN RAISE EXCEPTION 'Some items no longer exist'; END IF;
+END;
+$$;
+REVOKE ALL ON FUNCTION admin_reorder_items(text, uuid[]) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_reorder_items(text, uuid[]) TO service_role;
+
+CREATE OR REPLACE FUNCTION admin_update_category(p_id uuid, p_name text, p_icon text, p_order integer, p_private boolean, p_cascade boolean)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE categories SET name = p_name, icon = p_icon, "order" = p_order, is_private = p_private WHERE id = p_id;
+  IF NOT FOUND THEN RETURN false; END IF;
+  IF p_private AND p_cascade THEN UPDATE links SET is_private = true WHERE category_id = p_id AND is_private = false; END IF;
+  RETURN true;
+END;
+$$;
+REVOKE ALL ON FUNCTION admin_update_category(uuid,text,text,integer,boolean,boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_update_category(uuid,text,text,integer,boolean,boolean) TO service_role;
+
+CREATE OR REPLACE FUNCTION admin_move_links(p_ids uuid[], p_category_id uuid) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE target categories; first_order integer; affected integer;
+BEGIN
+  IF cardinality(p_ids) NOT BETWEEN 1 AND 1000 OR cardinality(p_ids) <> (SELECT count(DISTINCT id) FROM unnest(p_ids) id) THEN RAISE EXCEPTION 'Invalid IDs'; END IF;
+  SELECT * INTO target FROM categories WHERE id = p_category_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Target category does not exist'; END IF;
+  SELECT COALESCE(max("order"),0) INTO first_order FROM links WHERE category_id = p_category_id;
+  WITH moving AS (SELECT id, row_number() OVER (ORDER BY "order", id) AS n FROM links WHERE id = ANY(p_ids))
+  UPDATE links l SET category_id = p_category_id, is_private = target.is_private, "order" = first_order + moving.n
+    FROM moving WHERE l.id = moving.id;
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> cardinality(p_ids) THEN RAISE EXCEPTION 'Some links no longer exist'; END IF;
+  RETURN jsonb_build_object('count', affected, 'categoryName', target.name);
+END;
+$$;
+REVOKE ALL ON FUNCTION admin_move_links(uuid[],uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_move_links(uuid[],uuid) TO service_role;
+
+CREATE OR REPLACE FUNCTION submit_public_link(p_category_id uuid, p_title text, p_url text, p_description text)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE target categories; next_order integer;
+BEGIN
+  -- Serialize duplicate/quota checks and insertion across all application instances.
+  PERFORM pg_advisory_xact_lock(hashtext('nav-public-submission'));
+  SELECT * INTO target FROM categories WHERE id = p_category_id AND is_private = false FOR UPDATE;
+  IF NOT FOUND THEN RETURN 'invalid_category'; END IF;
+  IF (SELECT count(*) FROM links WHERE source = 'public' AND created_at >= now() - interval '1 hour') >= 20 THEN RETURN 'rate_limited'; END IF;
+  IF EXISTS(SELECT 1 FROM links WHERE url = p_url) THEN RETURN 'duplicate'; END IF;
+  SELECT COALESCE(max("order"),0) + 1 INTO next_order FROM links WHERE category_id = p_category_id;
+  INSERT INTO links(category_id,title,url,description,icon,"order",is_private,source)
+    VALUES(p_category_id,p_title,p_url,p_description,'',next_order,false,'public');
+  RETURN 'ok';
+END;
+$$;
+REVOKE ALL ON FUNCTION submit_public_link(uuid,text,text,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION submit_public_link(uuid,text,text,text) TO service_role;
+
+CREATE OR REPLACE FUNCTION begin_admin_account_change(p_expected_version text, p_new_version text)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO app_config(key,value) VALUES('admin_session_version','0') ON CONFLICT DO NOTHING;
+  UPDATE app_config SET value = p_new_version, updated_at = now()
+    WHERE key = 'admin_session_version' AND value = p_expected_version;
+  RETURN FOUND;
+END;
+$$;
+REVOKE ALL ON FUNCTION begin_admin_account_change(text,text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION begin_admin_account_change(text,text) TO service_role;
+
+-- Existing installations also receive timezone-correct timestamp defaults.
+ALTER TABLE app_config ALTER COLUMN updated_at SET DEFAULT now();
+ALTER TABLE categories ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE links ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE link_clicks ALTER COLUMN clicked_at SET DEFAULT now();
+ALTER TABLE site_stats ALTER COLUMN updated_at SET DEFAULT now();

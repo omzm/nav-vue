@@ -1,6 +1,8 @@
 <template>
   <div class="relative">
     <select
+      :id="field?.id"
+      :aria-describedby="field?.hintId"
       :value="modelValue"
       :disabled="disabled"
       :required="required"
@@ -30,23 +32,25 @@
 </template>
 
 <script setup lang="ts">
+import { useField } from '@/composables/useField';
+const field = useField();
 export interface SelectOption {
-  value: string
-  label: string
+  value: string;
+  label: string;
 }
 
 withDefaults(
   defineProps<{
-    modelValue: string
-    options: SelectOption[]
-    placeholder?: string
-    disabled?: boolean
-    required?: boolean
-    ariaLabel?: string
-    surface?: 'white' | 'mist'
+    modelValue: string;
+    options: SelectOption[];
+    placeholder?: string;
+    disabled?: boolean;
+    required?: boolean;
+    ariaLabel?: string;
+    surface?: 'white' | 'mist';
   }>(),
-  { placeholder: '', disabled: false, required: false, ariaLabel: '', surface: 'white' }
-)
+  { placeholder: '', disabled: false, required: false, ariaLabel: '', surface: 'white' },
+);
 
-defineEmits<{ 'update:modelValue': [value: string] }>()
+defineEmits<{ 'update:modelValue': [value: string] }>();
 </script>

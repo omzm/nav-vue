@@ -14,7 +14,7 @@ const props = withDefaults(
     enabled: boolean;
     defaultCategoryId?: string | null;
   }>(),
-  { defaultCategoryId: null }
+  { defaultCategoryId: null },
 );
 
 const STORAGE_KEY = 'nav-submit-password';
@@ -98,7 +98,7 @@ watch(
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = prevOverflow;
     });
-  }
+  },
 );
 
 onUnmounted(() => {
@@ -188,7 +188,12 @@ const inputClass =
       class="group relative w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-xl text-gray-700 dark:text-gray-200 border border-white/60 dark:border-white/20 bg-gradient-to-b from-white/80 to-gray-200/40 dark:from-white/15 dark:to-white/5 backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-white/95 hover:to-gray-200/60 dark:hover:from-white/20 dark:hover:to-white/10 hover:shadow-[0_4px_20px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,1)] active:scale-[0.98]"
       @click="open = true"
     >
-      <svg class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       提交收录
@@ -206,15 +211,27 @@ const inputClass =
           class="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden"
           @click.stop
         >
-          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div
+            class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700"
+          >
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">提交收录</h3>
             <button
               class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="关闭"
               @click="close"
             >
-              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                class="w-5 h-5 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -233,9 +250,15 @@ const inputClass =
               {{ error }}
             </div>
 
-            <div v-if="verified" class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <div
+              v-if="verified"
+              class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
+            >
               <span>密码已验证，本标签页内免输</span>
-              <button class="text-blue-600 dark:text-blue-400 hover:underline active:opacity-60 touch-manipulation" @click="clearVerification">
+              <button
+                class="text-blue-600 dark:text-blue-400 hover:underline active:opacity-60 touch-manipulation"
+                @click="clearVerification"
+              >
                 清除
               </button>
             </div>
@@ -269,16 +292,13 @@ const inputClass =
               <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 标题 <span class="text-gray-400 font-normal">（留空则用域名）</span>
               </span>
-              <input
-                v-model="title"
-                placeholder="网站名称"
-                maxlength="100"
-                :class="inputClass"
-              />
+              <input v-model="title" placeholder="网站名称" maxlength="100" :class="inputClass" />
             </label>
 
             <label class="block">
-              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</span>
+              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                >描述</span
+              >
               <textarea
                 v-model="description"
                 placeholder="一句话介绍（可选）"
@@ -294,7 +314,11 @@ const inputClass =
               </span>
               <select v-model="categoryId" :class="inputClass">
                 <option value="">请选择分类</option>
-                <option v-for="category in props.categories" :key="category.id" :value="category.id">
+                <option
+                  v-for="category in props.categories"
+                  :key="category.id"
+                  :value="category.id"
+                >
                   {{ category.name }}{{ category.isPrivate ? '（私密）' : '' }}
                 </option>
               </select>
