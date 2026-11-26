@@ -17,7 +17,7 @@ router.get('/snapshot', async (_req, res) => {
   try {
     const snapshot = await getSnapshot();
     res.set('Cache-Control', 'no-store');
-    res.json(snapshot);
+    res.json({ ...snapshot, submitEnabled: Boolean(env.submitPassword) });
   } catch (error) {
     console.error('GET /api/snapshot failed:', error);
     res.status(500).json({ error: '加载导航数据失败' });

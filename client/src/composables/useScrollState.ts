@@ -7,6 +7,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 export function useScrollState() {
   const scrolledPastHeader = ref(false);
   const headerRef = ref<HTMLElement | null>(null);
+  let observer: IntersectionObserver | undefined;
 
   const handleScroll = () => {
     if (!headerRef.value) return;
@@ -14,11 +15,20 @@ export function useScrollState() {
   };
 
   onMounted(() => {
+    if (headerRef.value && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(([entry]) => {
+        if (entry)
+          scrolledPastHeader.value = !entry.isIntersecting && entry.boundingClientRect.bottom <= 0;
+      });
+      observer.observe(headerRef.value);
+      return;
+    }
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
   });
 
   onUnmounted(() => {
+    observer?.disconnect();
     window.removeEventListener('scroll', handleScroll);
   });
 

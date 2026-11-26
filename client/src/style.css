@@ -1,8 +1,6 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   /* 后台设计色板：白底 + 浅灰面 + 墨黑字，近单色 */
   --color-ink: #101014;
   --color-page: #ffffff;
@@ -34,10 +32,11 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family:
-    Inter,
-    'Noto Sans SC',
     system-ui,
     -apple-system,
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Noto Sans CJK SC',
     sans-serif;
 }
 
@@ -69,6 +68,15 @@ html {
   scroll-behavior: smooth;
 }
 
+html:has([data-submission-dialog]) {
+  overflow-y: hidden;
+}
+@media (width < 64rem) {
+  html:has(.mobile-drawer-open) {
+    overflow-y: hidden;
+  }
+}
+
 /* 尊重"减少动态效果"系统偏好 */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -83,20 +91,13 @@ html {
   }
 }
 
-/* 渐入动画 */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.drawer-scrim-enter-active,
+.drawer-scrim-leave-active {
+  transition: opacity 180ms ease-out;
 }
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+.drawer-scrim-enter-from,
+.drawer-scrim-leave-to {
+  opacity: 0;
 }
 
 .category-svg-icon {

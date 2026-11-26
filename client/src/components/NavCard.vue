@@ -62,18 +62,18 @@ function handleClick() {
     :href="link.url"
     target="_blank"
     rel="noopener noreferrer"
-    class="group relative block min-h-[74px] sm:min-h-0 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700/60 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-500/5 hover:border-gray-300 dark:hover:border-gray-500/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden active:scale-95"
+    class="group relative block min-h-[74px] sm:min-h-0 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500/50 motion-safe:transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 overflow-hidden"
     @click="handleClick"
   >
     <div
-      class="absolute inset-0 bg-gray-50 dark:bg-gray-700/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      class="absolute inset-0 bg-gray-50 dark:bg-gray-700/30 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
     />
 
     <div
       class="relative flex h-full items-center justify-start gap-2.5 text-left sm:h-auto sm:items-start sm:gap-0 sm:space-x-3"
     >
       <div
-        class="flex-shrink-0 w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-md sm:rounded-lg bg-gray-50 dark:bg-gray-700/50 group-hover:scale-110 transition-transform duration-300 overflow-hidden"
+        class="flex-shrink-0 w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-md sm:rounded-lg bg-gray-50 dark:bg-gray-700/50 overflow-hidden"
       >
         <img
           v-if="customImageUrl && !customImgFailed"

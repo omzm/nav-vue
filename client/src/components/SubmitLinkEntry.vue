@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { post } from '@/api/client';
 
 export interface SubmitCategory {
@@ -11,7 +11,6 @@ export interface SubmitCategory {
 const props = withDefaults(
   defineProps<{
     categories: SubmitCategory[];
-    enabled: boolean;
     defaultCategoryId?: string | null;
   }>(),
   { defaultCategoryId: null },
@@ -63,18 +62,16 @@ function forgetSavedPassword() {
 
 // 同一标签页内记住密码，免得每提交一条都要输一次；关掉标签页即失效
 onMounted(() => {
-  try {
-    if (sessionStorage.getItem(STORAGE_KEY)) verified.value = true;
-  } catch {
-    // sessionStorage 不可用时降级为每次输入
-  }
+  verified.value = Boolean(readSavedPassword());
 });
 
-watch(open, (isOpen) => {
+watch(open, (isOpen, _wasOpen, onCleanup) => {
   if (isOpen) {
     error.value = '';
     successCount.value = 0;
     if (props.defaultCategoryId) categoryId.value = props.defaultCategoryId;
+    window.addEventListener('keydown', handleKey);
+    onCleanup(() => window.removeEventListener('keydown', handleKey));
   }
 });
 
@@ -86,24 +83,6 @@ function close() {
 const handleKey = (event: KeyboardEvent) => {
   if (event.key === 'Escape') close();
 };
-
-watch(
-  () => open.value,
-  (isOpen, _wasOpen, onCleanup) => {
-    if (!isOpen) return;
-    window.addEventListener('keydown', handleKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    onCleanup(() => {
-      window.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = prevOverflow;
-    });
-  },
-);
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKey);
-});
 
 function applyServerFailure(code?: string) {
   if (code === 'wrong_password') {
@@ -117,7 +96,8 @@ function applyServerFailure(code?: string) {
 async function handleSubmit() {
   const activePassword = verified.value ? readSavedPassword() : password.value;
 
-  if (!verified.value && !activePassword) {
+  if (!activePassword) {
+    verified.value = false;
     error.value = '请输入提交密码';
     return;
   }
@@ -149,10 +129,10 @@ async function handleSubmit() {
           // 这是刻意的设计（免重复输入），但 XSS 拿到即得密码——
           // 前端已有 sanitizeSvgCode 等 XSS 防护，后续如有富文本入口需重新评估。
           sessionStorage.setItem(STORAGE_KEY, activePassword);
+          verified.value = true;
         } catch {
-          // 忽略存储失败
+          verified.value = false;
         }
-        verified.value = true;
         password.value = '';
       }
       url.value = '';
@@ -183,165 +163,160 @@ const inputClass =
 </script>
 
 <template>
-  <template v-if="props.enabled">
-    <button
-      class="group relative w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-xl text-gray-700 dark:text-gray-200 border border-white/60 dark:border-white/20 bg-gradient-to-b from-white/80 to-gray-200/40 dark:from-white/15 dark:to-white/5 backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-white/95 hover:to-gray-200/60 dark:hover:from-white/20 dark:hover:to-white/10 hover:shadow-[0_4px_20px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,1)] active:scale-[0.98]"
-      @click="open = true"
+  <button
+    class="group relative w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-xl text-gray-700 dark:text-gray-200 border border-white/60 dark:border-white/20 bg-gradient-to-b from-white/80 to-gray-200/40 dark:from-white/15 dark:to-white/5 backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 hover:from-white/95 hover:to-gray-200/60 dark:hover:from-white/20 dark:hover:to-white/10 hover:shadow-[0_4px_20px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,1)] active:scale-[0.98]"
+    @click="open = true"
+  >
+    <svg
+      class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
     >
-      <svg
-        class="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      提交收录
-    </button>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+    提交收录
+  </button>
 
-    <Teleport v-if="open" to="body">
+  <Teleport v-if="open" to="body">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      data-submission-dialog
+      aria-modal="true"
+      aria-label="提交收录"
+      @click="close"
+    >
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        role="dialog"
-        aria-modal="true"
-        aria-label="提交收录"
-        @click="close"
+        class="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden"
+        @click.stop
       >
         <div
-          class="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden"
-          @click.stop
+          class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700"
         >
-          <div
-            class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700"
+          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">提交收录</h3>
+          <button
+            class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="关闭"
+            @click="close"
           >
-            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">提交收录</h3>
-            <button
-              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="关闭"
-              @click="close"
+            <svg
+              class="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                class="w-5 h-5 text-gray-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="px-5 py-4 space-y-3.5 max-h-[70vh] overflow-y-auto">
+          <div
+            v-if="successCount > 0"
+            class="px-3 py-2 text-sm rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+          >
+            提交成功{{ successCount > 1 ? `（已提交 ${successCount} 条）` : '' }}，可继续提交
+          </div>
+          <div
+            v-if="error"
+            class="px-3 py-2 text-sm rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300"
+          >
+            {{ error }}
           </div>
 
-          <div class="px-5 py-4 space-y-3.5 max-h-[70vh] overflow-y-auto">
-            <div
-              v-if="successCount > 0"
-              class="px-3 py-2 text-sm rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-            >
-              提交成功{{ successCount > 1 ? `（已提交 ${successCount} 条）` : '' }}，可继续提交
-            </div>
-            <div
-              v-if="error"
-              class="px-3 py-2 text-sm rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300"
-            >
-              {{ error }}
-            </div>
-
-            <div
-              v-if="verified"
-              class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
-            >
-              <span>密码已验证，本标签页内免输</span>
-              <button
-                class="text-blue-600 dark:text-blue-400 hover:underline active:opacity-60 touch-manipulation"
-                @click="clearVerification"
-              >
-                清除
-              </button>
-            </div>
-            <label v-else class="block">
-              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                提交密码
-              </span>
-              <input
-                v-model="password"
-                type="password"
-                placeholder="请输入提交密码"
-                :class="inputClass"
-                autocomplete="off"
-                autofocus
-              />
-            </label>
-
-            <label class="block">
-              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                链接地址 <span class="text-red-500">*</span>
-              </span>
-              <input
-                v-model="url"
-                placeholder="https://example.com"
-                inputmode="url"
-                :class="inputClass"
-              />
-            </label>
-
-            <label class="block">
-              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                标题 <span class="text-gray-400 font-normal">（留空则用域名）</span>
-              </span>
-              <input v-model="title" placeholder="网站名称" maxlength="100" :class="inputClass" />
-            </label>
-
-            <label class="block">
-              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                >描述</span
-              >
-              <textarea
-                v-model="description"
-                placeholder="一句话介绍（可选）"
-                rows="2"
-                maxlength="500"
-                :class="`${inputClass} resize-none`"
-              />
-            </label>
-
-            <label class="block">
-              <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                分类 <span class="text-red-500">*</span>
-              </span>
-              <select v-model="categoryId" :class="inputClass">
-                <option value="">请选择分类</option>
-                <option
-                  v-for="category in props.categories"
-                  :key="category.id"
-                  :value="category.id"
-                >
-                  {{ category.name }}{{ category.isPrivate ? '（私密）' : '' }}
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <div class="flex gap-2.5 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
+          <div
+            v-if="verified"
+            class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
+          >
+            <span>密码已验证，本标签页内免输</span>
             <button
-              class="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              @click="close"
+              class="text-blue-600 dark:text-blue-400 hover:underline active:opacity-60 touch-manipulation"
+              @click="clearVerification"
             >
-              取消
-            </button>
-            <button
-              :disabled="submitting"
-              class="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white transition-colors"
-              @click="handleSubmit"
-            >
-              {{ submitting ? '提交中…' : '提交' }}
+              清除
             </button>
           </div>
+          <label v-else class="block">
+            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              提交密码
+            </span>
+            <input
+              v-model="password"
+              type="password"
+              placeholder="请输入提交密码"
+              :class="inputClass"
+              autocomplete="off"
+              autofocus
+            />
+          </label>
+
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              链接地址 <span class="text-red-500">*</span>
+            </span>
+            <input
+              v-model="url"
+              placeholder="https://example.com"
+              inputmode="url"
+              :class="inputClass"
+            />
+          </label>
+
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              标题 <span class="text-gray-400 font-normal">（留空则用域名）</span>
+            </span>
+            <input v-model="title" placeholder="网站名称" maxlength="100" :class="inputClass" />
+          </label>
+
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >描述</span
+            >
+            <textarea
+              v-model="description"
+              placeholder="一句话介绍（可选）"
+              rows="2"
+              maxlength="500"
+              :class="`${inputClass} resize-none`"
+            />
+          </label>
+
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              分类 <span class="text-red-500">*</span>
+            </span>
+            <select v-model="categoryId" :class="inputClass">
+              <option value="">请选择分类</option>
+              <option v-for="category in props.categories" :key="category.id" :value="category.id">
+                {{ category.name }}{{ category.isPrivate ? '（私密）' : '' }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div class="flex gap-2.5 px-5 py-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            @click="close"
+          >
+            取消
+          </button>
+          <button
+            :disabled="submitting"
+            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white transition-colors"
+            @click="handleSubmit"
+          >
+            {{ submitting ? '提交中…' : '提交' }}
+          </button>
         </div>
       </div>
-    </Teleport>
-  </template>
+    </div>
+  </Teleport>
 </template>

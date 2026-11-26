@@ -245,7 +245,10 @@ test('late snapshot results cannot overwrite an invalidated cache', async () => 
   assert.equal((await getSnapshot()).categories[0].id, '3');
 });
 test('public snapshots are not retained by shared HTTP caches', async () => {
-  assert.equal((await call('/api/snapshot')).headers.get('cache-control'), 'no-store');
+  const response = await call('/api/snapshot');
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(response.data.submitEnabled, true);
+  assert.ok(!JSON.stringify(response.data).includes(process.env.SUBMIT_PASSWORD!));
 });
 test('SEO ignores forged forwarded headers and emits no attacker markup', async () => {
   const response = await nativeFetch(origin + '/sitemap.xml', {

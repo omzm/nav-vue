@@ -82,6 +82,7 @@ async function fixture(t, options = {}) {
     dataFails: false,
     unlockDelay: 0,
     privateEmpty: false,
+    submitEnabled: false,
     icon: '📁',
     ...options,
   };
@@ -136,12 +137,15 @@ async function fixture(t, options = {}) {
     if (path === '/admin/account') return json({ email: 'admin@example.test', username: 'admin' });
     if (path === '/snapshot')
       return json({
-        categories: [{ ...publicCategory, icon: state.icon }],
+        submitEnabled: state.submitEnabled,
+        categories: state.homeCategories ?? [{ ...publicCategory, icon: state.icon }],
         hotLinks: [],
         stats: { categoryCount: 1, linkCount: 1, totalViewCount: 0 },
         generatedAt: category.created_at,
       });
     if (path === '/submit/config') return json({ enabled: false, categories: [] });
+    if (path === '/submit')
+      return json({ ok: state.submitEnabled && body.password === 'fixture-submit' });
     if (path === '/daily-quote') return json({ quote: 'Test' });
     if (path === '/bing-wallpaper')
       return route.fulfill({ status: 200, contentType: 'image/png', body: pixel });
@@ -180,6 +184,125 @@ test('login errors are visible and form labels target the real controls', async 
   await page.getByRole('button', { name: '登录工作台' }).click();
   await page.getByText('账号或密码不正确', { exact: true }).waitFor();
   assert.equal(await page.locator('[role="status"]').count(), 1);
+});
+
+test('the admin login does not preload the home wallpaper', async (t) => {
+  const { page, calls } = await fixture(t);
+  await page.goto(origin + '/admin');
+  await page.getByLabel('登录密码').waitFor();
+  assert.ok(!calls.some(({ path }) => path === '/bing-wallpaper'));
+});
+
+test('home uses the snapshot submission flag without a separate config or font stylesheet', async (t) => {
+  const { page, calls, external } = await fixture(t, { submitEnabled: true });
+  await page.goto(origin);
+  await page.getByRole('button', { name: '提交收录' }).click();
+  await page.getByRole('dialog', { name: '提交收录' }).waitFor();
+  assert.ok(!calls.some(({ path }) => path === '/submit/config'));
+  assert.ok(!external.some((url) => new URL(url).hostname === 'fonts.googleapis.com'));
+});
+
+test('a failed wallpaper leaves the header and search usable', async (t) => {
+  const { page } = await fixture(t);
+  await page.route('**/api/bing-wallpaper', (route) => route.fulfill({ status: 204 }));
+  await page.goto(origin);
+  await page.locator('#search-input').fill('Example');
+  await page.getByRole('heading', { name: 'Example' }).waitFor();
+  await page.waitForFunction(() => !document.querySelector('header img'));
+  assert.notEqual(
+    await page.locator('header').evaluate((header) => getComputedStyle(header).backgroundImage),
+    'none',
+  );
+});
+
+test('blocked session storage leaves the password field available for a second submission', async (t) => {
+  const { page, calls } = await fixture(t, { submitEnabled: true });
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'nav-submit-password')
+        throw new DOMException('Storage unavailable', 'QuotaExceededError');
+      return set.call(this, key, value);
+    };
+  });
+  await page.goto(origin);
+  await page.getByRole('button', { name: '提交收录' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('分类').selectOption(categoryId);
+  for (const [index, slug] of ['first', 'second'].entries()) {
+    await dialog.getByLabel('提交密码').fill('fixture-submit');
+    await dialog.getByLabel('链接地址').fill(`https://example.test/${slug}`);
+    await dialog.getByRole('button', { name: '提交', exact: true }).click();
+    await dialog
+      .getByText(index ? '提交成功（已提交 2 条），可继续提交' : '提交成功，可继续提交', {
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(await dialog.getByLabel('提交密码').isVisible(), true);
+  }
+  assert.equal(calls.filter(({ path }) => path === '/submit').length, 2);
+});
+
+test('desktop scrolling recovers after resizing an open mobile drawer with a submission dialog', async (t) => {
+  const homeCategories = Array.from({ length: 25 }, (_, index) => ({
+    ...publicCategory,
+    id: `group-${index}`,
+  }));
+  const { page } = await fixture(t, { submitEnabled: true, homeCategories });
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.goto(origin);
+  await page.locator('header').getByRole('button', { name: '打开侧边栏' }).click();
+  await page.getByRole('button', { name: '提交收录' }).click();
+  await page.setViewportSize({ width: 1440, height: 852 });
+  const isLocked = () =>
+    page.evaluate(() =>
+      [document.documentElement, document.body].some(
+        (element) => getComputedStyle(element).overflowY === 'hidden',
+      ),
+    );
+  assert.equal(await isLocked(), true);
+  await page.getByRole('dialog').getByRole('button', { name: '关闭' }).click();
+  assert.equal(await isLocked(), false);
+  await page.mouse.move(800, 600);
+  await page.mouse.wheel(0, 600);
+  await page.waitForFunction(() => scrollY > 0);
+});
+
+test('submissions disabled: the entry is absent and its chunk is not downloaded', async (t) => {
+  const { page } = await fixture(t, { submitEnabled: false });
+  const chunks = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/assets/SubmitLinkEntry-')) chunks.push(request.url());
+  });
+  await page.goto(origin);
+  await page.getByRole('heading', { name: 'Example' }).waitFor();
+  assert.equal(await page.getByRole('button', { name: '提交收录' }).count(), 0);
+  assert.deepEqual(chunks, []);
+});
+
+test('mobile category navigation and return to top respect reduced motion', async (t) => {
+  const homeCategories = Array.from({ length: 20 }, (_, index) => ({
+    ...publicCategory,
+    id: `group-${index}`,
+    name: `Group ${index}`,
+  }));
+  const { page } = await fixture(t, { homeCategories });
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(origin);
+  await page.locator('header').getByRole('button', { name: '打开侧边栏' }).click();
+  await page
+    .locator('aside')
+    .getByRole('button', { name: /Group 10\b/ })
+    .click();
+  await page.waitForFunction(() => {
+    const top = document.getElementById('category-group-10').getBoundingClientRect().top;
+    return (
+      top >= 0 && top < 80 && getComputedStyle(document.documentElement).scrollBehavior === 'auto'
+    );
+  });
+  await page.getByRole('button', { name: '返回顶部' }).click();
+  await page.waitForFunction(() => scrollY === 0);
 });
 test('the recovery form remains accessible after administrator configuration', async (t) => {
   const { page } = await fixture(t, { loggedIn: false });

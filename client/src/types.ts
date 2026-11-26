@@ -25,6 +25,7 @@ export interface NavCategory {
 }
 
 export interface NavSnapshot {
+  submitEnabled: boolean;
   categories: NavCategory[];
   hotLinks: HotLink[];
   stats: {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, shallowRef } from 'vue';
 import SearchBar from '@/components/SearchBar.vue';
 import CategorySection from '@/components/CategorySection.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
@@ -16,11 +16,11 @@ import { get } from '@/api/client';
 import type { NavCategory, NavSnapshot } from '@/types';
 import { version } from '../../package.json';
 
-const snapshot = ref<NavSnapshot | null>(null);
+const snapshot = shallowRef<NavSnapshot | null>(null);
 // 快照加载中：此时展示骨架屏，而不是"没有找到匹配的结果"（数据还没回来不是没结果）
 const isSnapshotLoading = ref(true);
 const snapshotLoadFailed = ref(false);
-const submitEnabled = ref(false);
+const wallpaperFailed = ref(false);
 
 const selectedCategory = ref<string | null>(null);
 const isSidebarOpen = ref(false);
@@ -43,30 +43,7 @@ async function loadSnapshot() {
   }
 }
 
-async function loadSubmitConfig() {
-  try {
-    const config = await get<{ enabled: boolean }>('/submit/config');
-    submitEnabled.value = config.enabled;
-  } catch (error) {
-    console.error('Failed to load submit config:', error);
-  }
-}
-
-// 壁纸是 CSS background，无 load 事件：预加载完成后淡入，避免生硬闪现
-const wallpaperLoaded = ref(false);
-
-onMounted(() => {
-  void loadSnapshot();
-  void loadSubmitConfig();
-  const preload = new Image();
-  preload.onload = () => {
-    wallpaperLoaded.value = true;
-  };
-  preload.onerror = () => {
-    wallpaperLoaded.value = true; // 失败也显示渐变底，不一直透明
-  };
-  preload.src = '/api/bing-wallpaper';
-});
+onMounted(loadSnapshot);
 
 const { canRefresh, isRefreshButtonBusy, handleRefresh } = useAdminRefresh(loadSnapshot);
 const {
@@ -80,20 +57,13 @@ const {
 
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());
 
-function handleSelectCategory(categoryId: string | null) {
+async function handleSelectCategory(categoryId: string | null) {
   selectedCategory.value = categoryId;
   clearSearchQuery();
 
-  window.setTimeout(() => {
-    if (!categoryId) {
-      headerRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-
-    document
-      .getElementById(`category-${categoryId}`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 0);
+  await nextTick();
+  const target = categoryId ? document.getElementById(`category-${categoryId}`) : headerRef.value;
+  target?.scrollIntoView({ block: 'start' });
 }
 
 const sidebarCategories = computed<NavCategory[]>(() => {
@@ -167,7 +137,7 @@ const currentYear = new Date().getFullYear();
       :selected-category="selectedCategory"
       :is-open="isSidebarOpen"
       :hot-links="snapshot?.hotLinks ?? []"
-      :submit-enabled="submitEnabled"
+      :submit-enabled="snapshot?.submitEnabled ?? false"
       :version="version"
       @select-category="handleSelectCategory"
       @toggle="isSidebarOpen = !isSidebarOpen"
@@ -210,12 +180,15 @@ const currentYear = new Date().getFullYear();
 
       <header
         ref="headerRef"
-        class="relative overflow-hidden border-b border-gray-200 dark:border-gray-700/50 shadow-sm"
+        class="relative overflow-hidden border-b border-gray-200 dark:border-gray-700/50 shadow-sm bg-linear-to-br from-blue-500 to-indigo-700"
       >
-        <div
-          class="absolute inset-0 bg-cover bg-center bg-gradient-to-br from-blue-400 to-indigo-600 transition-opacity duration-700"
-          :class="wallpaperLoaded ? 'opacity-100' : 'opacity-0'"
-          style="background-image: url('/api/bing-wallpaper')"
+        <img
+          v-if="!wallpaperFailed"
+          :src="'/api/bing-wallpaper'"
+          alt=""
+          fetchpriority="high"
+          class="pointer-events-none absolute inset-0 size-full object-cover"
+          @error="wallpaperFailed = true"
         />
 
         <div class="relative px-4 py-8 sm:py-10">
@@ -285,7 +258,7 @@ const currentYear = new Date().getFullYear();
             </button>
           </div>
 
-          <template v-if="isSnapshotLoading">
+          <template v-if="isSnapshotLoading && !snapshot">
             <!-- 数据加载中：骨架屏（与 CategorySection 的栅格对齐），避免"没有找到匹配的结果"闪现 -->
             <div class="space-y-8 sm:space-y-10 animate-pulse" aria-hidden="true">
               <div v-for="n in 3" :key="n">

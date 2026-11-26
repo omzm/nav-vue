@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onUnmounted, watch } from 'vue';
+import { computed, defineAsyncComponent } from 'vue';
 import type { HotLink, NavCategory } from '@/types';
 import CategoryIcon from './CategoryIcon.vue';
 import LazyFavicon from './LazyFavicon.vue';
-import SubmitLinkEntry, { type SubmitCategory } from './SubmitLinkEntry.vue';
+import type { SubmitCategory } from './SubmitLinkEntry.vue';
 import UptimeText from './UptimeText.vue';
+
+const SubmitLinkEntry = defineAsyncComponent(() => import('./SubmitLinkEntry.vue'));
 
 const props = withDefaults(
   defineProps<{
@@ -30,18 +32,6 @@ const ALL_CATEGORIES_ICON = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://
   <path d="M9.5 20v-6h5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
-// 打开抽屉时锁定背后页面滚动（与提交弹窗行为一致）
-watch(
-  () => props.isOpen,
-  (isOpen) => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-  },
-  { immediate: true },
-);
-onUnmounted(() => {
-  document.body.style.overflow = '';
-});
-
 function handleCategoryClick(categoryId: string | null) {
   emit('select-category', categoryId);
   if (window.innerWidth < 1024) {
@@ -60,15 +50,17 @@ const submitCategories = computed<SubmitCategory[]>(() =>
 </script>
 
 <template>
-  <div
-    v-if="props.isOpen"
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden animate-fade-in"
-    @click="emit('toggle')"
-  />
+  <Transition name="drawer-scrim">
+    <div
+      v-if="props.isOpen"
+      class="fixed inset-0 bg-black/55 z-20 lg:hidden"
+      @click="emit('toggle')"
+    />
+  </Transition>
 
   <aside
-    :class="`fixed top-0 left-0 h-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl z-30 transition-[translate,visibility] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-      props.isOpen ? 'translate-x-0' : '-translate-x-full invisible'
+    :class="`fixed top-0 left-0 h-full bg-white dark:bg-gray-900 z-30 transition-[translate,visibility] duration-200 ease-out ${
+      props.isOpen ? 'mobile-drawer-open translate-x-0' : '-translate-x-full invisible'
     } lg:translate-x-0 lg:visible lg:z-0 w-56 sm:w-64 flex flex-col shadow-2xl lg:shadow-none border-r border-gray-200 dark:border-gray-700/50`"
   >
     <div
@@ -185,8 +177,8 @@ const submitCategories = computed<SubmitCategory[]>(() =>
 
     <div class="p-2.5 sm:p-3 border-t border-gray-200 dark:border-gray-700/50 space-y-2">
       <SubmitLinkEntry
+        v-if="props.submitEnabled"
         :categories="submitCategories"
-        :enabled="props.submitEnabled"
         :default-category-id="props.selectedCategory"
       />
       <div class="text-xs text-gray-500 dark:text-gray-400 text-center">

@@ -22,7 +22,6 @@ const throttledUpdate = throttle(updateProgress, 50);
 function scrollToTop() {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth',
   });
 }
 
