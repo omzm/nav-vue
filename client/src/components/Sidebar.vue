@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import type { HotLink, NavCategory } from '@/types';
 import CategoryIcon from './CategoryIcon.vue';
 import LazyFavicon from './LazyFavicon.vue';
@@ -23,7 +23,21 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'select-category', categoryId: string | null): void;
   (e: 'toggle'): void;
+  (e: 'visit-hot', link: HotLink): void;
 }>();
+
+const expanded = ref(false);
+const visibleHotLinks = computed(() =>
+  expanded.value ? props.hotLinks : props.hotLinks.slice(0, 3),
+);
+watch(
+  () => props.hotLinks,
+  (links, previous) => {
+    if (!previous.length || links.length <= 3) return;
+    const previousUrls = new Set(previous.map((link) => link.url));
+    if (links.slice(3).some((link) => !previousUrls.has(link.url))) expanded.value = true;
+  },
+);
 
 // 运行计时已抽到 UptimeText.vue（独立组件，避免整栏每秒重渲染）
 const ALL_CATEGORIES_ICON = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -147,13 +161,15 @@ const submitCategories = computed<SubmitCategory[]>(() =>
         >
           今日热门
         </h3>
-        <div class="space-y-0.5">
+        <div class="space-y-0.5 max-h-[28dvh] overflow-y-auto">
           <a
-            v-for="(link, index) in props.hotLinks"
+            v-for="(link, index) in visibleHotLinks"
             :key="link.url"
             :href="link.url"
             target="_blank"
             rel="noopener noreferrer"
+            @click="emit('visit-hot', link)"
+            @auxclick.middle="emit('visit-hot', link)"
             class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group"
           >
             <span class="text-xs font-bold text-gray-400 dark:text-gray-500 w-4 text-center">
@@ -172,6 +188,15 @@ const submitCategories = computed<SubmitCategory[]>(() =>
             </span>
           </a>
         </div>
+        <button
+          v-if="props.hotLinks.length > 3"
+          type="button"
+          :aria-expanded="expanded"
+          class="px-3 py-1 text-xs text-gray-600 dark:text-gray-300"
+          @click="expanded = !expanded"
+        >
+          {{ expanded ? '收起' : `查看全部 ${props.hotLinks.length} 个热门链接` }}
+        </button>
       </div>
     </div>
 

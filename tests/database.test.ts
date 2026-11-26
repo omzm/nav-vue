@@ -40,6 +40,32 @@ after(async () => {
   await db.close();
 });
 
+test('one click is enough; the complete daily ranking excludes private categories and previous days', async () => {
+  await db.exec('BEGIN');
+  try {
+    await db.query(
+      "INSERT INTO link_clicks(link_id,clicked_at) VALUES($1,now()),($2,now()),($1,now()-interval '2 days')",
+      [publicLink, hiddenLink],
+    );
+    await db.query(
+      `WITH inserted AS (
+      INSERT INTO links(category_id,title,url,description) SELECT $1, 'other-' || seq, 'https://other-' || seq || '.test', '' FROM generate_series(1,3) AS seq RETURNING id
+    ) INSERT INTO link_clicks(link_id) SELECT id FROM inserted`,
+      [publicCategory],
+    );
+    const { rows } = await db.query<{ url: string; count: number }>(
+      'SELECT url, click_count::int AS count FROM get_today_hot_links(-1)',
+    );
+    assert.equal(rows.length, 4);
+    assert.ok(rows.every((row) => row.count === 1));
+    assert.ok(rows.some((row) => row.url === 'https://one.example/'));
+    assert.ok(!rows.some((row) => row.url === 'https://hidden.example/'));
+    assert.equal((await db.query('SELECT * FROM get_today_hot_links()')).rows.length, 3);
+  } finally {
+    await db.exec('ROLLBACK');
+  }
+});
+
 test('anonymous RLS excludes public-flagged links in private categories', async () => {
   await db.exec('SET ROLE anon');
   try {

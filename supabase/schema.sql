@@ -221,7 +221,7 @@ AS $$
     AND COALESCE(cat.is_private, false) = false
   GROUP BY l.id, l.title, l.url, l.icon
   ORDER BY click_count DESC, l.title ASC
-  LIMIT GREATEST(limit_count, 0);
+  LIMIT CASE WHEN limit_count = -1 THEN NULL ELSE GREATEST(limit_count, 0) END;
 $$;
 
 -- 首页快照 RPC：只返回公开分类/链接（私密内容走 get_nav_private_data）

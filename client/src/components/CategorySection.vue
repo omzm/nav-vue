@@ -6,6 +6,7 @@ import NavCard from './NavCard.vue';
 defineProps<{
   category: NavCategory;
 }>();
+const emit = defineEmits<{ visit: [id: string] }>();
 </script>
 
 <template>
@@ -24,7 +25,12 @@ defineProps<{
       </div>
     </div>
     <div class="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-3">
-      <NavCard v-for="link in category.links" :key="link.id || link.url" :link="link" />
+      <NavCard
+        v-for="link in category.links"
+        :key="link.id || link.url"
+        :link="link"
+        @visit="!category.isPrivate && emit('visit', $event)"
+      />
     </div>
   </section>
 </template>

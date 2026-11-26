@@ -23,7 +23,7 @@ export async function getSnapshot(): Promise<NavSnapshot> {
   ticket.promise = (async () => {
     const { data, error } = await client.rpc(
       'get_nav_snapshot_data',
-      { limit_count: 3 },
+      { limit_count: -1 },
       { get: true },
     );
     if (error || !data || !Array.isArray(data.categories) || !Array.isArray(data.hotLinks))

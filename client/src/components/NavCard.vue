@@ -7,6 +7,7 @@ import { isEmojiIcon } from '@/utils/icons';
 const props = defineProps<{
   link: NavLink;
 }>();
+const emit = defineEmits<{ visit: [id: string] }>();
 
 // 自定义图标优先于自动获取：URL 直接当图片渲染，Emoji 当文字渲染（与后台 LinkIcon 口径一致）
 const customIcon = computed(() => (props.link.icon ?? '').trim());
@@ -27,33 +28,7 @@ watch(
 );
 
 function handleClick() {
-  const link = props.link;
-  if (!link.id) return;
-
-  const body = JSON.stringify({ linkId: link.id });
-
-  const reportViaFetch = () => {
-    fetch('/api/link-click', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      keepalive: true,
-    }).catch((error) => {
-      console.error('Failed to report link click:', error);
-    });
-  };
-
-  // sendBeacon 返回 false 表示未能加入发送队列，降级用 fetch 补发，避免点击静默丢失
-  if (typeof navigator.sendBeacon === 'function') {
-    const blob = new Blob([body], { type: 'application/json' });
-    try {
-      if (navigator.sendBeacon('/api/link-click', blob)) return;
-    } catch {
-      // 忽略异常，走下面的 fetch 补发
-    }
-  }
-
-  reportViaFetch();
+  if (props.link.id && !props.link.isPrivate) emit('visit', props.link.id);
 }
 </script>
 
@@ -64,6 +39,7 @@ function handleClick() {
     rel="noopener noreferrer"
     class="group relative block min-h-[74px] sm:min-h-0 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500/50 motion-safe:transition-transform duration-150 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 overflow-hidden"
     @click="handleClick"
+    @auxclick.middle="handleClick"
   >
     <div
       class="absolute inset-0 bg-gray-50 dark:bg-gray-700/30 opacity-0 group-hover:opacity-100 transition-opacity duration-150"

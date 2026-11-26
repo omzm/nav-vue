@@ -12,11 +12,13 @@ import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useScrollState } from '@/composables/useScrollState';
 import { useAdminRefresh } from '@/composables/useAdminRefresh';
 import { usePrivateUnlock } from '@/composables/usePrivateUnlock';
-import { get } from '@/api/client';
-import type { NavCategory, NavSnapshot } from '@/types';
+import { get, post } from '@/api/client';
+import type { HotLink, NavCategory, NavSnapshot } from '@/types';
 import { version } from '../../package.json';
 
 const snapshot = shallowRef<NavSnapshot | null>(null);
+const hotLinks = shallowRef<HotLink[]>([]);
+let hotRead = 0;
 // 快照加载中：此时展示骨架屏，而不是"没有找到匹配的结果"（数据还没回来不是没结果）
 const isSnapshotLoading = ref(true);
 const snapshotLoadFailed = ref(false);
@@ -31,10 +33,12 @@ useKeyboardShortcuts();
 const { scrolledPastHeader, headerRef } = useScrollState();
 
 async function loadSnapshot() {
+  const revision = ++hotRead;
   isSnapshotLoading.value = true;
   snapshotLoadFailed.value = false;
   try {
     snapshot.value = await get<NavSnapshot>('/snapshot');
+    if (revision === hotRead) hotLinks.value = snapshot.value.hotLinks;
   } catch (error) {
     console.error('Failed to load nav snapshot:', error);
     snapshotLoadFailed.value = true;
@@ -44,6 +48,29 @@ async function loadSnapshot() {
 }
 
 onMounted(loadSnapshot);
+
+async function recordVisit(linkId: string) {
+  try {
+    const result = await post<{ ok: boolean }>('/link-click', { linkId }, { keepalive: true });
+    if (!result.ok) return;
+    const revision = ++hotRead;
+    const latest = await get<HotLink[]>('/hot-links');
+    if (revision === hotRead) hotLinks.value = latest;
+  } catch (error) {
+    console.error('Failed to update today’s hot links:', error);
+  }
+}
+
+function visitHotLink(hot: HotLink) {
+  const candidates = snapshot.value?.categories.flatMap((category) =>
+    category.isPrivate
+      ? []
+      : category.links.filter(
+          (link) => !link.isPrivate && link.url === hot.url && link.title === hot.title,
+        ),
+  );
+  if (candidates?.length === 1 && candidates[0].id) void recordVisit(candidates[0].id);
+}
 
 const { canRefresh, isRefreshButtonBusy, handleRefresh } = useAdminRefresh(loadSnapshot);
 const {
@@ -136,7 +163,8 @@ const currentYear = new Date().getFullYear();
       :categories="sidebarCategories"
       :selected-category="selectedCategory"
       :is-open="isSidebarOpen"
-      :hot-links="snapshot?.hotLinks ?? []"
+      :hot-links="hotLinks"
+      @visit-hot="visitHotLink"
       :submit-enabled="snapshot?.submitEnabled ?? false"
       :version="version"
       @select-category="handleSelectCategory"
@@ -180,7 +208,8 @@ const currentYear = new Date().getFullYear();
 
       <header
         ref="headerRef"
-        class="relative overflow-hidden border-b border-gray-200 dark:border-gray-700/50 shadow-sm bg-linear-to-br from-blue-500 to-indigo-700"
+        class="relative overflow-hidden bg-gray-700"
+        :class="{ 'bg-linear-to-br from-blue-500 to-indigo-700': wallpaperFailed }"
       >
         <img
           v-if="!wallpaperFailed"
@@ -292,6 +321,7 @@ const currentYear = new Date().getFullYear();
               v-for="category in filteredCategories"
               :key="category.id"
               :category="category"
+              @visit="recordVisit"
             />
           </template>
           <div v-else class="text-center py-20">

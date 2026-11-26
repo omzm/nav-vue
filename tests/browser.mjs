@@ -83,6 +83,7 @@ async function fixture(t, options = {}) {
     unlockDelay: 0,
     privateEmpty: false,
     submitEnabled: false,
+    hotLinks: [],
     icon: '📁',
     ...options,
   };
@@ -139,7 +140,7 @@ async function fixture(t, options = {}) {
       return json({
         submitEnabled: state.submitEnabled,
         categories: state.homeCategories ?? [{ ...publicCategory, icon: state.icon }],
-        hotLinks: [],
+        hotLinks: state.hotLinks,
         stats: { categoryCount: 1, linkCount: 1, totalViewCount: 0 },
         generatedAt: category.created_at,
       });
@@ -159,9 +160,16 @@ async function fixture(t, options = {}) {
       });
     }
     if (path === '/admin/links/check-duplicate') return json({ duplicate: null });
+    if (path === '/hot-links') return json(state.hotLinks);
+    if (path === '/link-click') {
+      if (state.clickFails || body.linkId !== linkId) return json({ error: 'not recorded' }, 429);
+      const existing = state.hotLinks.find((hot) => hot.url === link.url);
+      if (existing) existing.clickCount++;
+      else state.hotLinks.push({ title: link.title, url: link.url, clickCount: 1 });
+      return json({ ok: true });
+    }
     if (
       path === '/site-view' ||
-      path === '/link-click' ||
       path === '/admin/refresh-snapshot' ||
       path.startsWith('/admin/categories') ||
       path.startsWith('/admin/links')
@@ -193,6 +201,43 @@ test('the admin login does not preload the home wallpaper', async (t) => {
   assert.ok(!calls.some(({ path }) => path === '/bing-wallpaper'));
 });
 
+test('first card click shows one on the hot list, a sidebar click counts once, and reload preserves it', async (t) => {
+  const { page, calls } = await fixture(t);
+  await page.goto(origin);
+  const row = page.locator('aside a').filter({ hasText: 'Example' });
+  await page.locator('section a').first().click();
+  await row.getByText('1', { exact: true }).last().waitFor();
+  await row.click();
+  await row.getByText('2', { exact: true }).waitFor();
+  assert.equal(calls.filter((call) => call.path === '/link-click').length, 2);
+  assert.equal(calls.filter((call) => call.path === '/snapshot').length, 1);
+  await page.reload();
+  await row.getByText('2', { exact: true }).waitFor();
+});
+
+test('a new single-click entry is visible even when three links already rank higher', async (t) => {
+  const hotLinks = [6, 4, 2].map((clickCount) => ({
+    title: `Rank ${clickCount}`,
+    url: `https://rank-${clickCount}.test`,
+    clickCount,
+  }));
+  const { page } = await fixture(t, { hotLinks });
+  await page.goto(origin);
+  await page.locator('section a').first().click();
+  await page.locator('aside a').filter({ hasText: 'Example' }).waitFor();
+  assert.equal(await page.locator('aside a').count(), 4);
+});
+
+test('rejected clicks do not create a hot entry', async (t) => {
+  const { page, calls } = await fixture(t, { clickFails: true });
+  await page.goto(origin);
+  const receipt = page.waitForResponse((response) => response.url().endsWith('/api/link-click'));
+  await page.locator('section a').first().click();
+  assert.equal((await receipt).status(), 429);
+  assert.equal(await page.getByText('今日热门', { exact: true }).count(), 0);
+  assert.ok(!calls.some((call) => call.path === '/hot-links'));
+});
+
 test('home uses the snapshot submission flag without a separate config or font stylesheet', async (t) => {
   const { page, calls, external } = await fixture(t, { submitEnabled: true });
   await page.goto(origin);
@@ -200,6 +245,37 @@ test('home uses the snapshot submission flag without a separate config or font s
   await page.getByRole('dialog', { name: '提交收录' }).waitFor();
   assert.ok(!calls.some(({ path }) => path === '/submit/config'));
   assert.ok(!external.some((url) => new URL(url).hostname === 'fonts.googleapis.com'));
+});
+
+test('mobile wallpaper meets the content without an exposed border, shadow or fallback gradient', async (t) => {
+  const { page } = await fixture(t);
+  await page.route('**/api/bing-wallpaper', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="18"><rect width="32" height="18" fill="green"/></svg>',
+    }),
+  );
+  for (const [width, colorScheme] of [
+    [375, 'dark'],
+    [393, 'light'],
+  ]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.emulateMedia({ colorScheme });
+    await page.goto(origin);
+    const edge = await page.locator('header img[fetchpriority="high"]').evaluate(async (image) => {
+      await image.decode();
+      const header = image.closest('header');
+      const style = getComputedStyle(header);
+      return {
+        gap:
+          document.querySelector('main').getBoundingClientRect().top -
+          image.getBoundingClientRect().bottom,
+        gradient: style.backgroundImage,
+        shadow: style.boxShadow,
+      };
+    });
+    assert.deepEqual(edge, { gap: 0, gradient: 'none', shadow: 'none' });
+  }
 });
 
 test('a failed wallpaper leaves the header and search usable', async (t) => {

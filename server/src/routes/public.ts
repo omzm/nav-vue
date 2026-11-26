@@ -24,6 +24,30 @@ router.get('/snapshot', async (_req, res) => {
   }
 });
 
+router.get('/hot-links', async (_req, res) => {
+  const { data, error } = await createAnonClient().rpc(
+    'get_today_hot_links',
+    { limit_count: -1 },
+    { get: true },
+  );
+  if (error) throw error;
+  res.json(
+    (data ?? []).map(
+      ({
+        title,
+        url,
+        icon,
+        click_count,
+      }: {
+        title: string;
+        url: string;
+        icon: string | null;
+        click_count: number;
+      }) => ({ title, url, icon, clickCount: Number(click_count) }),
+    ),
+  );
+});
+
 /**
  * "开门"口令校验 + 私密数据下发。
  * 口令本身是产品设计的"暗号门"（任何人输入"开门"即可查看），不做登录态要求；

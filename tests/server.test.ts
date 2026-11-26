@@ -80,6 +80,10 @@ globalThis.fetch = async (input, init = {}) => {
     return json({ ...user, ...(body?.email ? { email: body.email } : {}) });
   }
   if (url.pathname === '/rest/v1/rpc/get_nav_snapshot_version') return json(revision);
+  if (url.pathname === '/rest/v1/rpc/get_today_hot_links') {
+    assert.equal(url.searchParams.get('limit_count'), '-1');
+    return json([{ title: 'New', url: 'https://new.test', icon: null, click_count: 1 }]);
+  }
   if (url.pathname === '/rest/v1/rpc/get_nav_snapshot_data') {
     snapshotReads++;
     const captured = revision;
@@ -249,6 +253,16 @@ test('public snapshots are not retained by shared HTTP caches', async () => {
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal(response.data.submitEnabled, true);
   assert.ok(!JSON.stringify(response.data).includes(process.env.SUBMIT_PASSWORD!));
+});
+
+test('hot links returns only the ranking without reading a new homepage snapshot', async () => {
+  const response = await call('/api/hot-links');
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.data, [
+    { title: 'New', url: 'https://new.test', icon: null, clickCount: 1 },
+  ]);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(snapshotReads, 0);
 });
 test('SEO ignores forged forwarded headers and emits no attacker markup', async () => {
   const response = await nativeFetch(origin + '/sitemap.xml', {
